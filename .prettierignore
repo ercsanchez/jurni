@@ -1,0 +1,17 @@
+# prettier ignores the ff. by default
+**/.git
+**/.svn
+**/.hg
+**/node_modules
+
+# additional files to ignore
+.husky
+coverage
+.eslintignore
+*.log
+test-results
+docs
+**/*.html
+
+# next.js files
+**/.next
