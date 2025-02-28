@@ -7,12 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier '**/*.{cjs,mjs,js,jsx,ts,tsx,css,scss,sass,md}' --cache --write"
+    "format": "prettier '**/*.{cjs,mjs,js,jsx,ts,tsx,css,scss,sass,md}' --cache --write",
+    "prepare": "husky"
   },
   "dependencies": {
+    "next": "15.2.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.2.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -23,6 +24,8 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
     "eslint-config-prettier": "^10.0.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
     "prettier": "^3.5.2",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4",
