@@ -13,9 +13,11 @@
     "db:studio": "drizzle-kit studio --config src/db/drizzle.config.ts"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.8.0",
     "@neondatabase/serverless": "^0.10.4",
     "drizzle-orm": "^0.40.0",
     "next": "15.2.0",
+    "next-auth": "^5.0.0-beta.25",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
