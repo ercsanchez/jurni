@@ -1,6 +1,9 @@
 const getEnvValue = (key: string, defaultValue: string = ''): string => {
   const value = process.env[key];
-  if (value === undefined) {
+
+  if (!value) {
+    // abovecondition is equivalent to value?.length === 0 || value === undefined
+
     if (defaultValue) {
       return defaultValue;
     }
