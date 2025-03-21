@@ -1,4 +1,7 @@
-const getEnvValue = (key: string, defaultValue: string = ''): string => {
+export default function getEnvValue(
+  key: string,
+  defaultValue: string = '',
+): string {
   const value = process.env[key];
 
   if (!value) {
@@ -10,6 +13,4 @@ const getEnvValue = (key: string, defaultValue: string = ''): string => {
     throw new Error(`Enviroment variable ${key} is not set`);
   }
   return value;
-};
-
-export default getEnvValue;
+}

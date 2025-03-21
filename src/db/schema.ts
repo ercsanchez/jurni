@@ -1,31 +1,52 @@
 import {
   // boolean,
-  timestamp,
-  pgTable,
-  text,
-  primaryKey,
   integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  varchar,
 } from 'drizzle-orm/pg-core';
 
+import { relations } from 'drizzle-orm';
+
 import type { AdapterAccountType } from 'next-auth/adapters';
+
+export type ExtendedAdapterAccountType = AdapterAccountType | 'credentials';
 
 export const users = pgTable('user', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  email: text('email').unique(),
+  name: varchar('name', { length: 64 }),
+  email: varchar('email', { length: 128 }).unique().notNull(),
   emailVerified: timestamp('emailVerified', { mode: 'date' }),
-  image: text('image'),
+  image: text('image'), // delete this and create one for userProfile
+  password: varchar('password', { length: 256 }),
 });
+
+// next-auth does not allow user to signin with OAuth if already signed in with credentials | [auth][error] OAuthAccountNotLinked: Another account already exists with the same e-mail address. Read more at https://errors.authjs.dev#oauthaccountnotlinked
+//     at handleLoginOrRegister (webpack-internal:///(rsc)/./node_modules/@auth/core/lib/actions/callback/handle-login.js:256:23)
+export const usersRelations = relations(users, ({ many }) => ({
+  accounts: many(accounts),
+}));
+
+// quick fix: don't create an account if credentials and assume that if there is no account, user signed in with credentials, then try signing in with oauth
+
+// export const usersRelations = relations(users, ({ one }) => ({
+//   accounts: one(accounts),
+// }));
 
 export const accounts = pgTable(
   'account',
   {
+    // id: text('id')
+    //   .primaryKey()
+    //   .$defaultFn(() => crypto.randomUUID()),
     userId: text('userId')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    type: text('type').$type<AdapterAccountType>().notNull(),
+    type: text('type').$type<ExtendedAdapterAccountType>().notNull(),
     provider: text('provider').notNull(),
     providerAccountId: text('providerAccountId').notNull(),
     refresh_token: text('refresh_token'),
@@ -37,16 +58,45 @@ export const accounts = pgTable(
     session_state: text('session_state'),
   },
   (account) => [
-    {
-      compoundKey: primaryKey({
-        columns: [account.provider, account.providerAccountId],
-      }),
-    },
+    // per next-auth / drizzle docs:
+    // primaryKey({ columns: [account.provider, account.providerAccountId] }),
+
+    // account.providerAccountId may be null or empty '' so better to use user id, since user can only have one account per provider
+
+    // this change may affect next-auth in some other way so check this!!!
+    primaryKey({ columns: [account.userId, account.provider] }),
   ],
+
+  // this is the old way | cannot delete account in the db | only deleted when deleting the user | drizzle-kit studio error please add a primary key column to your table to update or delete rows
+  // (account) => [
+  //   {
+  //     compoundKey: primaryKey({
+  //       columns: [account.provider, account.providerAccountId],
+  //     }),
+  //   },
+  // ],
 );
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
+}));
+
+// userProfiles
+
+// groups
+// groupSessions
+
+// userGroupMemberships
+// userGroupCheckins
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
+
+export type InsertAccount = typeof accounts.$inferInsert;
+export type SelectAccount = typeof accounts.$inferSelect;
 
 // REQUIRED SCHEMAS FOR NEXT-AUTH DB SESSION STRATEGY
 
