@@ -1,5 +1,6 @@
 import {
   // boolean,
+  // foreignKey,
   integer,
   pgTable,
   primaryKey,
@@ -23,12 +24,30 @@ export const users = pgTable('user', {
   emailVerified: timestamp('emailVerified', { mode: 'date' }),
   image: text('image'), // delete this and create one for userProfile
   password: varchar('password', { length: 256 }),
+
+  // fix for referencing userProfile by profileId:
+  // profileId: text('profileId'),
 });
 
 // next-auth does not allow user to signin with OAuth if already signed in with credentials | [auth][error] OAuthAccountNotLinked: Another account already exists with the same e-mail address. Read more at https://errors.authjs.dev#oauthaccountnotlinked
 //     at handleLoginOrRegister (webpack-internal:///(rsc)/./node_modules/@auth/core/lib/actions/callback/handle-login.js:256:23)
-export const usersRelations = relations(users, ({ many }) => ({
+
+export const usersRelations = relations(users, ({ many, one }) => ({
   accounts: many(accounts),
+  profile: one(userProfiles),
+
+  // this doesn't work because users doesn't have a field profileId that references userProfile.id | per drizzle docs: https://orm.drizzle.team/docs/relations#foreign-keys
+
+  // profile: one(users, {
+  //   fields: [userProfiles.userId],
+  //   references: [users.id],
+  // }),
+
+  // fix for referencing userProfile by profileId:
+  // profile: one(userProfiles, {
+  //   fields: [users.profileId],
+  //   references: [userProfiles.id],
+  // }),
 }));
 
 // quick fix: don't create an account if credentials and assume that if there is no account, user signed in with credentials, then try signing in with oauth
@@ -84,7 +103,40 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   }),
 }));
 
-// userProfiles
+export const userProfiles = pgTable(
+  'user_profile',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: 'cascade' }),
+
+    firstName: varchar('first_name', { length: 64 }).notNull(),
+    middleName: varchar('middle_name', { length: 64 }).notNull(),
+    lastName: varchar('last_name', { length: 64 }).notNull(),
+  },
+
+  // Alternative foreign key implementation if not using userId: .references(() => users.id, { onDelete: 'cascade' })
+  // (userProfiles) => [
+  //   foreignKey({
+  //     name: 'user_fk',
+  //     columns: [userProfiles.userId],
+  //     foreignColumns: [users.id],
+  //   })
+  //     .onDelete('cascade')
+  //     .onUpdate('cascade'),
+  // ],
+);
+
+export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
+  user: one(users, { fields: [userProfiles.userId], references: [users.id] }),
+
+  // doesn't work | child relation needs to indicate what parent field will be referenced by the child | [Error: There is not enough information to infer relation "userProfiles.user"]
+  // user: one(users),
+}));
 
 // groups
 // groupSessions
@@ -97,6 +149,9 @@ export type SelectUser = typeof users.$inferSelect;
 
 export type InsertAccount = typeof accounts.$inferInsert;
 export type SelectAccount = typeof accounts.$inferSelect;
+
+export type InsertUserProfile = typeof userProfiles.$inferInsert;
+export type SelectUserProfile = typeof userProfiles.$inferSelect;
 
 // REQUIRED SCHEMAS FOR NEXT-AUTH DB SESSION STRATEGY
 
