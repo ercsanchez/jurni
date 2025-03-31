@@ -24,3 +24,13 @@ export const UpdatePasswordSchema = z.object({
     .string()
     .min(1, { message: 'Password confirmation is required' }),
 });
+
+export const UpsertUserProfileSchema = z.object({
+  firstName: z.string().min(1, { message: 'First Name is required' }),
+  // z.optional means can be undefined
+  middleName: z.optional(
+    // z.string().min(1, { message: 'Do not pass an empty field.' }), // cannot be empty string
+    z.string(), // can be empty string
+  ),
+  lastName: z.string().min(1, { message: 'Last Name is required' }),
+});

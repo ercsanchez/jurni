@@ -4,9 +4,11 @@ import { db } from '@/db';
 import {
   accounts,
   users,
+  userProfiles,
   type ExtendedAdapterAccountType,
   type SelectAccount,
   type SelectUser,
+  type SelectUserProfile,
 } from '@/db/schema';
 
 export const selectUserByEmail = async (email: SelectUser['email']) => {
@@ -69,6 +71,32 @@ export const selectUserWithSpecificAccountByEmail = async (
   });
 
   // console.log('selectUserWithSpecificAccountByEmail=====>', result);
+
+  return result ?? null;
+};
+
+export const selectUserWithProfileByUserId = async (
+  userId: SelectUser['id'],
+) => {
+  const result = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    with: {
+      profile: true,
+    },
+  });
+
+  return result ?? null;
+};
+
+export const selectProfileWithUserByUserId = async (
+  userId: SelectUserProfile['userId'],
+) => {
+  const result = await db.query.userProfiles.findFirst({
+    where: eq(userProfiles.userId, userId),
+    with: {
+      user: true,
+    },
+  });
 
   return result ?? null;
 };
