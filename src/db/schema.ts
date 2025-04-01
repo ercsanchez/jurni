@@ -35,6 +35,7 @@ export const users = pgTable('user', {
 export const usersRelations = relations(users, ({ many, one }) => ({
   accounts: many(accounts),
   profile: one(userProfiles),
+  ownedGroups: many(groups, { relationName: 'ownership' }),
 
   // this doesn't work because users doesn't have a field profileId that references userProfile.id | per drizzle docs: https://orm.drizzle.team/docs/relations#foreign-keys
 
@@ -138,7 +139,23 @@ export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
   // user: one(users),
 }));
 
-// groups
+export const groups = pgTable('group', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  ownerId: text('owner_id').notNull(),
+  // .references(() => users.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 256 }).notNull().unique(),
+});
+
+export const groupsRelations = relations(groups, ({ one }) => ({
+  owner: one(users, {
+    fields: [groups.ownerId],
+    references: [users.id],
+    relationName: 'ownership',
+  }),
+}));
+
 // groupSessions
 
 // userGroupMemberships
@@ -152,6 +169,9 @@ export type SelectAccount = typeof accounts.$inferSelect;
 
 export type InsertUserProfile = typeof userProfiles.$inferInsert;
 export type SelectUserProfile = typeof userProfiles.$inferSelect;
+
+export type InsertGroup = typeof groups.$inferInsert;
+export type SelectGroup = typeof groups.$inferSelect;
 
 // REQUIRED SCHEMAS FOR NEXT-AUTH DB SESSION STRATEGY
 
