@@ -34,3 +34,53 @@ export const UpsertUserProfileSchema = z.object({
   ),
   lastName: z.string().min(1, { message: 'Last Name is required' }),
 });
+
+export const InsertGroupSchema = z.object({
+  name: z.string().min(1, { message: 'Name is required.' }),
+});
+
+export const UpdateGroupSchema = z.object({
+  name: z.string().min(1, { message: 'Name is required.' }),
+});
+
+// this is not correct since "name" and "all" ( ?name=test&all=true) could be present in the query and it won't trigger a failed validation
+// export const GroupNameSearchParams = z
+//   .object({
+//     name: z.optional(
+//       z.string().min(1, {
+//         message: `url query param ("name") must contain at least 1 char.`,
+//       }),
+//     ),
+//     all: z.literal('true', {
+//       errorMap: () => ({
+//         message: `URL query param ("all") must be true.`, // unnecessary to specify all=false when not querying all table records from the db
+//       }),
+//     }),
+//   })
+//   .strict(); // failed validation when any key, not defined, is present
+
+export const NameSearchParamsSchema = z
+  .object({
+    name: z.string().min(1, {
+      message: `URL query param ("name") must contain at least 1 char.`,
+    }),
+  })
+  .partial() // makes all obj keys optional
+  .strict({ message: 'Invalid URL query params.' }); // failed validation when any key, not defined, is present
+
+export const AllSearchParamsSchema = z
+  .object({
+    all: z.literal('true', {
+      errorMap: () => ({
+        message: `URL query param ("all") must be true.`, // unnecessary to specify all=false when not querying all table records from the db
+      }),
+    }),
+  })
+  .partial()
+  .strict({ message: 'Invalid URL query params.' });
+
+// use this for query params that have boolean values
+// const booleanSearchParamsValues = ['true', 'false'] as const;
+// z.enum(booleanSearchParamsValues, {
+//   message: `URL query param ("all") must be true or false.`,
+// }),

@@ -6,7 +6,7 @@ import {
   serverResponseError,
 } from './http-response';
 import { hashPassword, comparePassword } from './password';
-import zodValidate from './zod-validate';
+import { zodValidate, zodValidatesearchParams } from './zod-validate';
 
 export {
   comparePassword,
@@ -16,5 +16,6 @@ export {
   httpResConfig,
   httpResByStatus,
   serverResponseError,
+  zodValidatesearchParams,
   zodValidate,
 };

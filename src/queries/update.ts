@@ -1,7 +1,7 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { users, type SelectUser } from '@/db/schema';
+import { groups, users, type SelectGroup, type SelectUser } from '@/db/schema';
 
 export const updateUserEmailVerified = async (userId: SelectUser['id']) => {
   const [result] = await db
@@ -22,6 +22,24 @@ export const updateUserPassword = async (
     .set({ password: hashedPword })
     .where(eq(users.id, userId))
     .returning({ id: users.id, email: users.email });
+
+  return result ?? null;
+};
+
+export const updateGroup = async ({
+  id,
+  ownerId,
+  name,
+}: {
+  id: SelectGroup['id'];
+  ownerId: SelectGroup['ownerId'];
+  name: SelectGroup['name'];
+}) => {
+  const [result] = await db
+    .update(groups)
+    .set({ name: name })
+    .where(and(eq(groups.ownerId, ownerId), eq(groups.id, id)))
+    .returning({ id: groups.id, name: groups.name, ownerId: groups.ownerId });
 
   return result ?? null;
 };

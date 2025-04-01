@@ -1,9 +1,11 @@
 import { db } from '@/db';
 import {
   accounts,
+  groups,
   users,
   userProfiles,
   type InsertAccount,
+  type InsertGroup,
   type InsertUser,
   type InsertUserProfile,
 } from '@/db/schema';
@@ -47,6 +49,14 @@ export const insertOrUpdateUserProfile = async (
       middleName: userProfiles.middleName,
       lastName: userProfiles.lastName,
     });
+
+  return result ?? null;
+};
+
+export const insertGroup = async (newGroup: InsertGroup) => {
+  const [result] = await db.insert(groups).values(newGroup).returning({
+    name: groups.name,
+  });
 
   return result ?? null;
 };
