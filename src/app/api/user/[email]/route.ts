@@ -1,7 +1,7 @@
 // EXAMPLE ROUTE
 import { httpRes } from '@/utils';
 import { serverResponseError } from '@/utils';
-import { selectUserWithAccountsByEmail } from '@/queries/select';
+import { selectUserWithAccountsByEmail } from '@/db-access/select';
 
 export async function GET(
   _req: Request,

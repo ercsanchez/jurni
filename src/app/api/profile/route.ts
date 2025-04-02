@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
 
 import { currentAuthUser } from '@/lib/nextauth';
-import { insertOrUpdateUserProfile } from '@/queries/insert';
+import { insertOrUpdateUserProfile } from '@/db-access/insert';
 import {
   selectUserById,
   selectUserWithProfileByUserId,
   // selectProfileWithUserByUserId,
-} from '@/queries/select';
+} from '@/db-access/select';
 import { httpRes, zodValidate, serverResponseError } from '@/utils';
 import { UpsertUserProfileSchema } from '@/zod-schemas';
 

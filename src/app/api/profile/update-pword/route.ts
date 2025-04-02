@@ -3,11 +3,11 @@ import { NextRequest } from 'next/server';
 import { DrizzleError } from 'drizzle-orm';
 
 import { currentAuthUser } from '@/lib/nextauth';
-import { updateUserPassword } from '@/queries/update';
+import { updateUserPassword } from '@/db-access/update';
 // import handler from '@/middleware/handler';
 // import authCheck from '@/middleware/authCheck';
-import { selectUserWithSpecificAccountByEmail } from '@/queries/select';
-import { updateUserPasswordAndInsertCredentialsAccount } from '@/queries/transaction';
+import { selectUserWithSpecificAccountByEmail } from '@/db-access/select';
+import { updateUserPasswordAndInsertCredentialsAccount } from '@/db-access/transaction';
 import {
   httpRes,
   zodValidate,

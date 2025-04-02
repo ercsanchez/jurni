@@ -3,8 +3,8 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter';
 
 import authConfig from '@/config/nextauth.config';
 import { db } from '@/db';
-import { updateUserEmailVerified } from '@/queries/update';
-import { selectUserById } from '@/queries/select';
+import { updateUserEmailVerified } from '@/db-access/update';
+import { selectUserById } from '@/db-access/select';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db),

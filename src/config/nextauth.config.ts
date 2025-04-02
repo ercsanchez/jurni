@@ -6,7 +6,7 @@ import { SelectAccount } from '@/db/schema';
 
 import appConfig from '@/config/app.config';
 import { LoginSchema } from '@/zod-schemas';
-import { selectUserWithSpecificAccountByEmail } from '@/queries/select';
+import { selectUserWithSpecificAccountByEmail } from '@/db-access/select';
 import { comparePassword, zodValidate } from '@/utils';
 
 export default {

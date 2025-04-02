@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { DrizzleError } from 'drizzle-orm';
 
-import { selectUserByEmail } from '@/queries/select';
-import { insertUserAndAccountOnCredentialsRegister } from '@/queries/transaction';
+import { selectUserByEmail } from '@/db-access/select';
+import { insertUserAndAccountOnCredentialsRegister } from '@/db-access/transaction';
 import {
   hashPassword,
   httpRes,
