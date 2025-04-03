@@ -40,7 +40,7 @@ export const PATCH = async function PATCH(
       withOwner: true,
     });
 
-    console.log('existingGroup----------------', existingGroup);
+    // console.log('existingGroup----------------', existingGroup);
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });

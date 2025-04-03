@@ -32,7 +32,7 @@ export const GET = async function GET(req: NextRequest) {
     let result;
 
     if (!hasSearchParams) {
-      console.log('running !hasSearchParams');
+      // console.log('running !hasSearchParams');
       const userWithOwnedGroups = await queryFindUserByIdWithOwnedGroups(
         sessionUser.id!,
       ); // TODO: should also query user's memberships
@@ -136,18 +136,6 @@ export const POST = async function POST(req: Request) {
       return httpRes.badRequest({
         message: 'Group was not created.',
       });
-
-    // console.log('selecting group with owner');
-    // const selectGroupsWithOwner = await selectGroupsWithOwnerByOwnerId(
-    //   sessionUser.id!,
-    // );
-    // console.log('selectGroupsWithOwner', selectGroupsWithOwner);
-
-    // console.log('selecting user with owned groups');
-    // const selectUserWithOwnedGroups = await selectUserWithOwnedGroupsByUserId(
-    //   sessionUser.id!,
-    // );
-    // console.log('selectUserWithOwnedGroups', selectUserWithOwnedGroups);
 
     return httpRes.ok({
       message: 'Group successfully created.',
