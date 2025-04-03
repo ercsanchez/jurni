@@ -1,5 +1,7 @@
-import { nullIfEmptyArrOrStr } from './general';
+import { type DbAccessFn } from './defs';
+import { capitalizeFirstChar, nullIfEmptyArrOrStr } from './general';
 import getEnvValue from './get-env-value';
+import queryDbWithSearchParams from './query-db-with-search-params';
 import {
   httpRes,
   httpResConfig,
@@ -7,9 +9,10 @@ import {
   serverResponseError,
 } from './http-response';
 import { hashPassword, comparePassword } from './password';
-import { zodValidate, zodValidatesearchParams } from './zod-validate';
+import { zodValidate, zodValidateSearchParams } from './zod-validate';
 
 export {
+  capitalizeFirstChar,
   comparePassword,
   getEnvValue,
   hashPassword,
@@ -17,7 +20,9 @@ export {
   httpResConfig,
   httpResByStatus,
   nullIfEmptyArrOrStr,
+  queryDbWithSearchParams,
   serverResponseError,
-  zodValidatesearchParams,
+  zodValidateSearchParams,
   zodValidate,
+  type DbAccessFn,
 };

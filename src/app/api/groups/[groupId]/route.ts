@@ -21,7 +21,7 @@ export const PATCH = async function PATCH(
 
     if (!existingUser)
       return httpRes.notFound({
-        message: 'Account does not exist.',
+        message: 'User does not exist.',
       });
 
     const data = await req.json();
@@ -29,7 +29,7 @@ export const PATCH = async function PATCH(
     const validation = zodValidate(UpdateGroupSchema, data);
 
     if (!validation?.success) {
-      console.error(new Error(`ZodError: ${validation.message}`));
+      console.error(new Error(`Zod Validation Error: ${validation.message}`));
       return httpRes.badRequest({ message: validation?.message });
     }
 
@@ -40,8 +40,6 @@ export const PATCH = async function PATCH(
       withOwner: true,
     });
 
-    // console.log('existingGroup----------------', existingGroup);
-
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
 
@@ -49,8 +47,12 @@ export const PATCH = async function PATCH(
       id: groupId,
       ownerId: sessionUser.id!,
       ...validation.data,
+      // need this if zodValidate return value is typed
+      // name: validation.data!.name,
+      // ...(validation.data as { name: string }),
     });
 
+    // result is null if group doesn't exist
     if (!result)
       return httpRes.badRequest({
         message: 'Group failed to update.',

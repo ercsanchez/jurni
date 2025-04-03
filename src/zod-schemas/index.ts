@@ -66,7 +66,7 @@ export const NameSearchParamsSchema = z
     }),
   })
   .partial() // makes all obj keys optional
-  .strict({ message: 'Invalid URL query params.' }); // failed validation when any key, not defined, is present
+  .strict({ message: 'Some invalid URL query params present.' }); // failed validation when any key, not defined, is present
 
 export const AllSearchParamsSchema = z
   .object({
@@ -77,7 +77,7 @@ export const AllSearchParamsSchema = z
     }),
   })
   .partial()
-  .strict({ message: 'Invalid URL query params.' });
+  .strict({ message: 'Some invalid URL query params present.' });
 
 // use this for query params that have boolean values
 // const booleanSearchParamsValues = ['true', 'false'] as const;

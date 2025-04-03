@@ -3,13 +3,18 @@ import { NextRequest } from 'next/server';
 import { currentAuthUser } from '@/lib/nextauth';
 import { insertGroup } from '@/db-access/insert';
 import { queryFindUserByIdWithOwnedGroups } from '@/db-access/query';
-import { selectGroupByName, selectAllGroups } from '@/db-access/select';
 import {
+  selectAllGroups,
+  selectGroupByName,
+  selectUserById,
+} from '@/db-access/select';
+import {
+  queryDbWithSearchParams,
   httpRes,
   nullIfEmptyArrOrStr,
   serverResponseError,
   zodValidate,
-  zodValidatesearchParams,
+  type DbAccessFn,
 } from '@/utils';
 import {
   AllSearchParamsSchema,
@@ -17,6 +22,7 @@ import {
   NameSearchParamsSchema,
 } from '@/zod-schemas';
 
+// valid search queries: ?all=true | ?name=group-name
 export const GET = async function GET(req: NextRequest) {
   console.log('running GET api/groups');
 
@@ -31,67 +37,64 @@ export const GET = async function GET(req: NextRequest) {
     const hasSearchParams = nullIfEmptyArrOrStr(req.nextUrl.search);
     // console.log('hasSearchParams====>', hasSearchParams, req.nextUrl);
 
-    let result;
-
     if (!hasSearchParams) {
-      // console.log('running !hasSearchParams');
       const userWithOwnedGroups = await queryFindUserByIdWithOwnedGroups(
         sessionUser.id!,
       ); // TODO: should also query user's memberships
 
       if (!userWithOwnedGroups)
-        return httpRes.notFound({ message: 'Account does not exist.' });
+        return httpRes.notFound({ message: 'User does not exist.' });
 
-      result = {
-        ownedGroups: userWithOwnedGroups?.ownedGroups,
-        // TODO: should also include user's memberships
-        // allGroups:
-      };
+      return httpRes.ok({
+        message: 'User and his/her Group/(s) successfully retrieved.',
+        data: {
+          ownedGroups: userWithOwnedGroups?.ownedGroups,
+          // TODO: should also include user's memberships
+          // allGroups:
+        },
+      });
     } else {
       const searchParams = req.nextUrl.searchParams;
       const searchParamsObj = Object.fromEntries(searchParams);
 
-      //if using getter
+      // if using getter
       // const queryParamName = searchParams.get('name');
 
-      const { searchGroupByParamName, searchGroupsByParamAll } =
-        zodValidatesearchParams(
-          {
-            searchGroupByParamName: NameSearchParamsSchema,
-            searchGroupsByParamAll: AllSearchParamsSchema,
-          },
-          searchParamsObj,
-        );
+      const dbAccess = {
+        // search group by name (param: name=group-name)
+        nameSearchParamsSchema: {
+          schema: NameSearchParamsSchema,
+          noResultMsg: 'Group not found.',
+          fn: selectGroupByName as DbAccessFn,
+        },
+        // search all groups (param: all=true)
+        allSearchParamsSchema: {
+          schema: AllSearchParamsSchema,
+          noResultMsg: 'No existing groups yet.',
+          fn: selectAllGroups,
 
-      if (searchGroupByParamName.success) {
-        // valid url query: ?name=some-string
-        const existingGroup = await selectGroupByName(
-          searchGroupByParamName.data!.name!,
-        );
-        if (!existingGroup)
-          return httpRes.notFound({ message: 'Group name does not exist.' });
+          // selectAllGroups doesn't receive any params so need to do it this way because fn will always be passed the searchParams obj as arg
+          // no need to specify args or check if all=true since zodValidate will take care of search params validation
+          // fn: (args: { all: true }) => args.all && selectAllGroups(),
+        },
+      };
 
-        result = existingGroup;
-      } else if (searchGroupsByParamAll.success) {
-        // valid url query: ?all=true
-        const allGroups = await selectAllGroups();
+      const result = await queryDbWithSearchParams({
+        dbAccess,
+        searchParams: searchParamsObj,
+      });
 
-        if (!allGroups)
-          return httpRes.notFound({ message: 'No existing groups yet.' });
-
-        result = allGroups;
-      } else {
-        return httpRes.badRequest({ message: 'Invalid URL query params.' });
+      if (!result!.success) {
+        return httpRes[result!.responseType!]({
+          message: result!.message!,
+        });
       }
+
+      return httpRes.ok({
+        message: result!.message ?? 'Group/(s) successfully retrieved.',
+        data: result!.data,
+      });
     }
-
-    if (!result) return httpRes.notFound({ message: 'No result.' });
-
-    // console.log('result===>', result);
-    return httpRes.ok({
-      message: 'Group/(s) successfully retrieved.',
-      data: result,
-    });
   } catch (error: unknown) {
     return serverResponseError(error);
   }
@@ -106,12 +109,12 @@ export const POST = async function POST(req: Request) {
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    // const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selectUserById(sessionUser!.id!);
 
-    // if (!existingUser)
-    //   return httpRes.notFound({
-    //     message: 'Account does not exist.',
-    //   });
+    if (!existingUser)
+      return httpRes.notFound({
+        message: 'User does not exist.',
+      });
 
     const data = await req.json();
 
@@ -120,18 +123,19 @@ export const POST = async function POST(req: Request) {
     if (!validation?.success)
       return httpRes.badRequest({ message: validation?.message });
 
-    const { name } = validation.data;
+    const { name } = validation.data!;
 
     // need to check if group name already exists so that we can inform user why req failed, unless, we restrict user (on the client-side) from sending a request if there is a name conflict (e.g. disable "create group" button until user chooses another name)
 
-    const existingGroup = await selectGroupByName(name);
+    const existingGroup = await selectGroupByName({ name });
 
     if (existingGroup)
       return httpRes.conflict({ message: 'Group Name already exists.' });
 
     const result = await insertGroup({
       ownerId: sessionUser.id!,
-      ...validation.data,
+      name,
+      // ...(validation.data! as { name: string; } // also works | ts doesn't know the form of ...(someVar) so need to typecast
     });
 
     if (!result)
@@ -181,4 +185,4 @@ export const POST = async function POST(req: Request) {
 //     return httpRes.notFound({ message: 'No existing groups yet.' });
 //   result = allGroups;
 // }
-// ----------------------------------------------------------------------------
+// -------------------------------------------------------------------------
