@@ -6,7 +6,7 @@ import { SelectAccount } from '@/db/schema';
 
 import appConfig from '@/config/app.config';
 import { LoginSchema } from '@/zod-schemas';
-import { selectUserWithSpecificAccountByEmail } from '@/db-access/select';
+import { queryFindUserByEmailWithAcctWhereProvider } from '@/db-access/query';
 import { comparePassword, zodValidate } from '@/utils';
 
 export default {
@@ -44,7 +44,7 @@ export default {
 
           // by default next-auth doesn't expect user to have an account when signing in via credentials
 
-          const existingUser = await selectUserWithSpecificAccountByEmail(
+          const existingUser = await queryFindUserByEmailWithAcctWhereProvider(
             email,
             'credentials',
           );

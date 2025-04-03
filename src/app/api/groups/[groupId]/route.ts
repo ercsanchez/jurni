@@ -1,8 +1,6 @@
 import { currentAuthUser } from '@/lib/nextauth';
-import {
-  queryFindGroupByIdWithOwner,
-  selectUserById,
-} from '@/db-access/select';
+import { queryFindGroupByIdWithOwner } from '@/db-access/query';
+import { selectUserById } from '@/db-access/select';
 import { updateGroup } from '@/db-access/update';
 import { httpRes, zodValidate, serverResponseError } from '@/utils';
 import { UpdateGroupSchema } from '@/zod-schemas';

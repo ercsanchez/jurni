@@ -2,13 +2,8 @@ import { NextRequest } from 'next/server';
 
 import { currentAuthUser } from '@/lib/nextauth';
 import { insertGroup } from '@/db-access/insert';
-import {
-  selectGroupByName,
-  // selectGroupsWithOwnerByOwnerId,
-  // selectUserById,
-  queryFindUserByIdWithOwnedGroups,
-  selectAllGroups,
-} from '@/db-access/select';
+import { queryFindUserByIdWithOwnedGroups } from '@/db-access/query';
+import { selectGroupByName, selectAllGroups } from '@/db-access/select';
 import {
   httpRes,
   zodValidate,

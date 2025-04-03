@@ -3,10 +3,10 @@ import { NextRequest } from 'next/server';
 import { currentAuthUser } from '@/lib/nextauth';
 import { insertOrUpdateUserProfile } from '@/db-access/insert';
 import {
-  selectUserById,
-  selectUserWithProfileByUserId,
-  // selectProfileWithUserByUserId,
-} from '@/db-access/select';
+  queryFindUserByIdWithProfile,
+  // queryFindProfileByUserIdWithUser
+} from '@/db-access/query';
+import { selectUserById } from '@/db-access/select';
 import { httpRes, zodValidate, serverResponseError } from '@/utils';
 import { UpsertUserProfileSchema } from '@/zod-schemas';
 
@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest | Request) {
         message: 'Account does not exist.',
       });
 
-    const result = await selectUserWithProfileByUserId(sessionUser.id!);
+    const result = await queryFindUserByIdWithProfile(sessionUser.id!);
 
     if (!result?.profile)
       return httpRes.notFound({ message: 'Account Profile does not exist.' });
@@ -82,13 +82,13 @@ export const PUT = async function PUT(req: NextRequest | Request) {
       });
 
     // console.log('error: userWithProfile');
-    // const userWithProfile = await selectUserWithProfileByUserId(
+    // const userWithProfile = await queryFindUserByIdWithProfile(
     //   sessionUser.id!,
     // );
     // console.log('userWithProfile', userWithProfile);
 
     // console.log('error: userProfileWithUser');
-    // const userProfileWithUser = await selectProfileWithUserByUserId(
+    // const userProfileWithUser = await queryFindProfileByUserIdWithUser(
     //   sessionUser.id!,
     // );
     // console.log('userProfileWithUser', userProfileWithUser);

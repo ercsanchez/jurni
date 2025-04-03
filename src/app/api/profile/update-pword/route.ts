@@ -6,7 +6,7 @@ import { currentAuthUser } from '@/lib/nextauth';
 import { updateUserPassword } from '@/db-access/update';
 // import handler from '@/middleware/handler';
 // import authCheck from '@/middleware/authCheck';
-import { selectUserWithSpecificAccountByEmail } from '@/db-access/select';
+import { queryFindUserByEmailWithAcctWhereProvider } from '@/db-access/query';
 import { updateUserPasswordAndInsertCredentialsAccount } from '@/db-access/transaction';
 import {
   httpRes,
@@ -40,7 +40,7 @@ export const PATCH = async function PATCH(
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
     const existingUserWithCredentialsAcct =
-      await selectUserWithSpecificAccountByEmail(
+      await queryFindUserByEmailWithAcctWhereProvider(
         sessionUser!.email!,
         'credentials',
       );
