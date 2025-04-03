@@ -1,3 +1,4 @@
+import { nullIfEmptyArrOrStr } from './general';
 import getEnvValue from './get-env-value';
 import {
   httpRes,
@@ -15,6 +16,7 @@ export {
   httpRes,
   httpResConfig,
   httpResByStatus,
+  nullIfEmptyArrOrStr,
   serverResponseError,
   zodValidatesearchParams,
   zodValidate,

@@ -6,9 +6,10 @@ import { queryFindUserByIdWithOwnedGroups } from '@/db-access/query';
 import { selectGroupByName, selectAllGroups } from '@/db-access/select';
 import {
   httpRes,
+  nullIfEmptyArrOrStr,
+  serverResponseError,
   zodValidate,
   zodValidatesearchParams,
-  serverResponseError,
 } from '@/utils';
 import {
   AllSearchParamsSchema,
@@ -26,7 +27,8 @@ export const GET = async function GET(req: NextRequest) {
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
     // hasSearchParams is true when path?char (>= 1 char after ?) and false when path? or path (w/o ?)
-    const hasSearchParams = req.nextUrl.search.length > 0;
+    // const hasSearchParams = req.nextUrl.search.length > 0;
+    const hasSearchParams = nullIfEmptyArrOrStr(req.nextUrl.search);
     // console.log('hasSearchParams====>', hasSearchParams, req.nextUrl);
 
     let result;

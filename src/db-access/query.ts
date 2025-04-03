@@ -11,6 +11,7 @@ import {
   type SelectUser,
   type SelectUserProfile,
 } from '@/db/schema';
+import { nullIfEmptyArrOrStr } from '@/utils';
 
 interface WithOwner {
   with: {
@@ -78,7 +79,8 @@ export const queryFindGroupsByOwnerIdWithOwner = async (
   });
 
   // findMany returns array w/c is empty if none found
-  return result.length > 0 ? result : null;
+  // return result.length > 0 ? result : null;
+  return nullIfEmptyArrOrStr(result);
 };
 
 export const queryFindUserByIdWithProfile = async (id: SelectUser['id']) => {
@@ -145,5 +147,6 @@ export const queryFindGroupsByOwnerId = async (
   });
 
   // findMany returns array w/c is empty if none found
-  return result.length > 0 ? result : null;
+  // return result.length > 0 ? result : null;
+  return nullIfEmptyArrOrStr(result);
 };
