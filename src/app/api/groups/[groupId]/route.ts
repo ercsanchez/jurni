@@ -29,7 +29,7 @@ export const PATCH = async function PATCH(
     const validation = zodValidate(UpdateGroupSchema, data);
 
     if (!validation?.success) {
-      console.error(new Error(`Zod Validation Error: ${validation.message}`));
+      // console.error(new Error(`Zod Validation Error: ${validation.message}`));
       return httpRes.badRequest({ message: validation?.message });
     }
 

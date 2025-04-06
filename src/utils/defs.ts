@@ -11,9 +11,8 @@ export interface SearchParamsSchemas {
 export type DbAccessFn = (
   // ...params: Array<any> // ts-eslint error
   // ...params: Array<object> // doesn't work
-  // params: { [key: string]: string }, // if only passing 1 arg
+  param: { [key: string]: string } | string | number, // if only passing 1 arg |  we assume fn params[] can expect an object so that we can destructure
   // ...params: Array<{ [key: string]: string } | string | number> // if expecting multiple args with diff. types
-  ...params: Array<{ [key: string]: string }> // we assume fn expects an object so that we can destructure
 ) => Promise<object | Array<object> | undefined | null>;
 
 export interface SearchParamsDbAccess {
