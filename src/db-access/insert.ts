@@ -1,11 +1,13 @@
 import { db } from '@/db';
 import {
   accounts,
+  employments,
   groups,
   memberships,
   users,
   userProfiles,
   type InsertAccount,
+  type InsertEmployment,
   type InsertGroup,
   type InsertMembership,
   type InsertUser,
@@ -90,12 +92,43 @@ export const insertMemberships = async ({
         memberships.groupId,
         // memberships['memberships_user_id_group_id'],
       ],
-    }) // don't use this since will return null if there is a conflict and we want to return an error if already existing and record not inserted
+    })
     .returning({
       userId: memberships.userId,
       groupId: memberships.groupId,
       confirmedBy: memberships.confirmedBy,
       createdAt: memberships.createdAt,
+    });
+
+  return nullIfEmptyArrOrStr(result);
+};
+
+export const insertEmployments = async ({
+  userIds,
+  groupId,
+  addedBy,
+}: {
+  userIds: Array<InsertEmployment['userId']>;
+  groupId: InsertEmployment['groupId'];
+  addedBy: InsertEmployment['addedBy'];
+}) => {
+  const newEmployments: Array<InsertEmployment> = userIds.map((userId) => ({
+    userId,
+    groupId,
+    addedBy,
+  }));
+
+  const result = await db
+    .insert(employments)
+    .values(newEmployments)
+    .onConflictDoNothing({
+      target: [employments.userId, employments.groupId],
+    })
+    .returning({
+      userId: employments.userId,
+      groupId: employments.groupId,
+      addedBy: employments.addedBy,
+      createdAt: employments.createdAt,
     });
 
   return nullIfEmptyArrOrStr(result);

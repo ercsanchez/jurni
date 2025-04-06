@@ -161,3 +161,14 @@ export const queryFindGroupByIdWithMemberships = async (
 
   return result ?? null;
 };
+
+export const queryFindGroupByIdWithEmployments = async (
+  groupId: SelectGroup['id'],
+) => {
+  const result = await db.query.groups.findFirst({
+    where: eq(groups.id, groupId),
+    with: { employments: { with: { user: true } } },
+  });
+
+  return result ?? null;
+};

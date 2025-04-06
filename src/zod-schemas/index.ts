@@ -85,7 +85,7 @@ export const AllSearchParamsSchema = z
 //   message: `URL query param ("all") must be true or false.`,
 // }),
 
-export const InsertDeleteMembershipsSchema = z.object({
+export const InsertDeleteMembershipsEmploymentsSchema = z.object({
   userIds: z
     .array(z.string().min(1, { message: 'Empty user to delete.' }))
     .nonempty({ message: "You haven't defined any users to delete." }),

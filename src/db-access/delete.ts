@@ -1,7 +1,12 @@
 import { eq, and, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { memberships, type SelectMembership } from '@/db/schema';
+import {
+  employments,
+  memberships,
+  type SelectEmployment,
+  type SelectMembership,
+} from '@/db/schema';
 import { nullIfEmptyArrOrStr } from '@/utils';
 
 export const deleteMembershipById = async ({
@@ -41,6 +46,23 @@ export const deleteMembershipsByIds = async ({
     .delete(memberships)
     .where(
       sql`${memberships.userId} IN ${userIds} AND ${memberships.groupId}=${groupId}`,
+    )
+    .returning();
+
+  return nullIfEmptyArrOrStr(result);
+};
+
+export const deleteEmploymentsByIds = async ({
+  userIds,
+  groupId,
+}: {
+  userIds: Array<SelectEmployment['userId']>;
+  groupId: SelectEmployment['groupId'];
+}) => {
+  const result = await db
+    .delete(employments)
+    .where(
+      sql`${employments.userId} IN ${userIds} AND ${employments.groupId}=${groupId}`,
     )
     .returning();
 
