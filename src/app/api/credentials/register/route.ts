@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { DrizzleError } from 'drizzle-orm';
+// import { DrizzleError } from 'drizzle-orm';
 
 import { selectUserByEmail } from '@/db-access/select';
 import { insertUserAndAccountOnCredentialsRegister } from '@/db-access/transaction';
@@ -38,15 +38,16 @@ export const POST = async function POST(req: NextRequest) {
     const existingUser = await selectUserByEmail(email);
     // console.log('existingUser', existingUser);
 
+    // do not allow user to register w/ credentials if user already has an existing acct., instead, let them add a password with api/profile/update-pword
     if (existingUser)
       return httpRes.conflict({
         message:
-          'Account already exists. Please sign in with the same account you used originally',
+          'Account already exists. Please sign in with the same account you used originally and add password sign-in in your Account Settings.',
       });
 
     const hashedPassword = await hashPassword(password);
 
-    // by default next-auth doesn't expect user to have an account when signing in via credentials
+    // by default next-auth doesn't expect user to have an account when registering via credentials
 
     // DB TRANSACTION
     // ensures user and account are always created together on registration via credentials
@@ -56,8 +57,6 @@ export const POST = async function POST(req: NextRequest) {
       // name,
       ...validation.data,
     });
-
-    console.log('insertedUser and insertedAcct', result);
 
     // no need since already throwing error in transaction
     // if (!insertedUserAndAcct)
@@ -70,14 +69,18 @@ export const POST = async function POST(req: NextRequest) {
       data: result,
     });
   } catch (error: unknown) {
-    if (error instanceof DrizzleError && error.message.includes('Rollback')) {
-      console.error(error);
-      return httpRes.internalServerErr({
-        message: 'Account was not created. Please try again.',
-      });
-    }
+    // if (error instanceof DrizzleError && error.message.includes('Rollback')) {
+    //   console.error(error);
+    //   return httpRes.internalServerErr({
+    //     message: 'Account was not created. Please try again.',
+    //   });
+    // }
 
-    return serverResponseError(error);
+    // return serverResponseError(error);
+
+    return serverResponseError(error, {
+      message: 'Account was not created. Please try again.',
+    });
   }
 };
 

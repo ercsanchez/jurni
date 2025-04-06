@@ -1,6 +1,6 @@
 // import { NextRequest, NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { DrizzleError } from 'drizzle-orm';
+// import { DrizzleError } from 'drizzle-orm';
 
 import { currentAuthUser } from '@/lib/nextauth';
 import { updateUserPassword } from '@/db-access/update';
@@ -97,12 +97,12 @@ export const PATCH = async function PATCH(
       data: result,
     });
   } catch (error: unknown) {
-    if (error instanceof DrizzleError && error.message.includes('Rollback')) {
-      console.error(error);
-      return httpRes.internalServerErr({
-        message: 'Account was not successfully updated.',
-      });
-    }
+    // if (error instanceof DrizzleError && error.message.includes('Rollback')) {
+    //   console.error(error);
+    //   return httpRes.internalServerErr({
+    //     message: 'Account was not successfully updated.',
+    //   });
+    // }
 
     return serverResponseError(error);
   }
