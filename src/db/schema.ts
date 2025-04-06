@@ -37,6 +37,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   profile: one(userProfiles),
   ownedGroups: many(groups, { relationName: 'ownership' }),
   memberships: many(memberships),
+  employments: many(employments),
 
   // this doesn't work because users doesn't have a field profileId that references userProfile.id | per drizzle docs: https://orm.drizzle.team/docs/relations#foreign-keys
 
@@ -156,6 +157,7 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
     relationName: 'ownership',
   }),
   memberships: many(memberships),
+  employments: many(employments),
 }));
 
 // groupSessions
@@ -184,6 +186,29 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
   }),
 }));
 
+export const employments = pgTable(
+  'employment',
+  {
+    userId: text('user_id').notNull(),
+    groupId: text('group_id').notNull(),
+    addedBy: text('added_by').notNull(),
+    addedAt: timestamp('added_at', { mode: 'date' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
+);
+
+export const employmentsRelations = relations(employments, ({ one }) => ({
+  group: one(groups, {
+    fields: [employments.groupId],
+    references: [groups.id],
+  }),
+  user: one(users, {
+    fields: [employments.userId],
+    references: [users.id],
+  }),
+}));
+
 // userGroupCheckins
 
 export type InsertUser = typeof users.$inferInsert;
@@ -200,6 +225,9 @@ export type SelectGroup = typeof groups.$inferSelect;
 
 export type InsertMembership = typeof memberships.$inferInsert;
 export type SelectMembership = typeof memberships.$inferSelect;
+
+export type InsertEmployment = typeof employments.$inferInsert;
+export type SelectEmployment = typeof employments.$inferSelect;
 
 // REQUIRED SCHEMAS FOR NEXT-AUTH DB SESSION STRATEGY
 
