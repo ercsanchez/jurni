@@ -1,5 +1,10 @@
 import { type DbAccessFn } from './defs';
-import { capitalizeFirstChar, nullIfEmptyArrOrStr } from './general';
+import {
+  capitalizeFirstChar,
+  isEmptyObjOrStr,
+  nullIfEmptyArrOrStr,
+  nullIfEmptyObjOrStr,
+} from './general';
 import getEnvValue from './get-env-value';
 import queryDbWithSearchParams from './query-db-with-search-params';
 import {
@@ -16,10 +21,12 @@ export {
   comparePassword,
   getEnvValue,
   hashPassword,
+  isEmptyObjOrStr,
   httpRes,
   httpResConfig,
   httpResByStatus,
   nullIfEmptyArrOrStr,
+  nullIfEmptyObjOrStr,
   queryDbWithSearchParams,
   serverResponseError,
   zodValidateSearchParams,
