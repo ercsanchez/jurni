@@ -36,6 +36,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   accounts: many(accounts),
   profile: one(userProfiles),
   ownedGroups: many(groups, { relationName: 'ownership' }),
+  memberships: many(memberships),
 
   // this doesn't work because users doesn't have a field profileId that references userProfile.id | per drizzle docs: https://orm.drizzle.team/docs/relations#foreign-keys
 
@@ -148,17 +149,41 @@ export const groups = pgTable('group', {
   name: varchar('name', { length: 256 }).notNull().unique(),
 });
 
-export const groupsRelations = relations(groups, ({ one }) => ({
+export const groupsRelations = relations(groups, ({ one, many }) => ({
   owner: one(users, {
     fields: [groups.ownerId],
     references: [users.id],
     relationName: 'ownership',
   }),
+  memberships: many(memberships),
 }));
 
 // groupSessions
 
-// userGroupMemberships
+export const memberships = pgTable(
+  'membership',
+  {
+    userId: text('user_id').notNull(),
+    groupId: text('group_id').notNull(),
+    invitedBy: text('invited_by'),
+    confirmedBy: text('confirmed_by').notNull(),
+    confirmedAt: timestamp('confirmed_at', { mode: 'date' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
+);
+
+export const membershipsRelations = relations(memberships, ({ one }) => ({
+  group: one(groups, {
+    fields: [memberships.groupId],
+    references: [groups.id],
+  }),
+  user: one(users, {
+    fields: [memberships.userId],
+    references: [users.id],
+  }),
+}));
+
 // userGroupCheckins
 
 export type InsertUser = typeof users.$inferInsert;
@@ -172,6 +197,9 @@ export type SelectUserProfile = typeof userProfiles.$inferSelect;
 
 export type InsertGroup = typeof groups.$inferInsert;
 export type SelectGroup = typeof groups.$inferSelect;
+
+export type InsertMembership = typeof memberships.$inferInsert;
+export type SelectMembership = typeof memberships.$inferSelect;
 
 // REQUIRED SCHEMAS FOR NEXT-AUTH DB SESSION STRATEGY
 
