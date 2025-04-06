@@ -21,7 +21,7 @@ export function zodValidate(zodSchema: z.Schema, data: object) {
     console.error(new Error(`Zod Validation Error: ${zodErrorMsg}`));
     return {
       success,
-      message: zodErrorMsg,
+      message: `Validation Error: ${zodErrorMsg}`,
     };
   }
 
