@@ -2,13 +2,16 @@ import { db } from '@/db';
 import {
   accounts,
   groups,
+  memberships,
   users,
   userProfiles,
   type InsertAccount,
   type InsertGroup,
+  type InsertMembership,
   type InsertUser,
   type InsertUserProfile,
 } from '@/db/schema';
+import { nullIfEmptyArrOrStr } from '@/utils';
 
 export const insertUser = async (newUser: InsertUser) => {
   const [result] = await db
@@ -61,4 +64,39 @@ export const insertGroup = async (newGroup: InsertGroup) => {
   console.log('insertGroup', result);
 
   return result ?? null;
+};
+
+export const insertMemberships = async ({
+  userIds,
+  groupId,
+  confirmedBy,
+}: {
+  userIds: Array<InsertMembership['userId']>;
+  groupId: InsertMembership['groupId'];
+  confirmedBy: InsertMembership['confirmedBy'];
+}) => {
+  const newMemberships: Array<InsertMembership> = userIds.map((userId) => ({
+    userId,
+    groupId,
+    confirmedBy,
+  }));
+
+  const result = await db
+    .insert(memberships)
+    .values(newMemberships)
+    .onConflictDoNothing({
+      target: [
+        memberships.userId,
+        memberships.groupId,
+        // memberships['memberships_user_id_group_id'],
+      ],
+    }) // don't use this since will return null if there is a conflict and we want to return an error if already existing and record not inserted
+    .returning({
+      userId: memberships.userId,
+      groupId: memberships.groupId,
+      confirmedBy: memberships.confirmedBy,
+      createdAt: memberships.createdAt,
+    });
+
+  return nullIfEmptyArrOrStr(result);
 };

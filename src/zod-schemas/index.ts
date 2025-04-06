@@ -84,3 +84,9 @@ export const AllSearchParamsSchema = z
 // z.enum(booleanSearchParamsValues, {
 //   message: `URL query param ("all") must be true or false.`,
 // }),
+
+export const InsertDeleteMembershipsSchema = z.object({
+  userIds: z
+    .array(z.string().min(1, { message: 'Empty user to delete.' }))
+    .nonempty({ message: "You haven't defined any users to delete." }),
+});

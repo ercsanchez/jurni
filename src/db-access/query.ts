@@ -150,3 +150,14 @@ export const queryFindGroupsByOwnerId = async (
   // return result.length > 0 ? result : null;
   return nullIfEmptyArrOrStr(result);
 };
+
+export const queryFindGroupByIdWithMemberships = async (
+  groupId: SelectGroup['id'],
+) => {
+  const result = await db.query.groups.findFirst({
+    where: eq(groups.id, groupId),
+    with: { memberships: { with: { user: true } } },
+  });
+
+  return result ?? null;
+};

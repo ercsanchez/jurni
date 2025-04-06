@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
@@ -26,6 +26,24 @@ export const selectUserById = async (id: SelectUser['id']) => {
   return result ?? null;
 };
 
+export const selectUsersByIds = async (userIds: Array<SelectUser['id']>) => {
+  // const query = db
+  //   .select()
+  //   .from(users)
+  //   .where(sql`${users.id} IN ${userIds}`)
+  //   .toSQL();
+  // console.log('query check ====>', query);
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(sql`${users.id} IN ${userIds}`);
+
+  // console.log('query result =======>', result);
+
+  return nullIfEmptyArrOrStr(result);
+};
+
 export const selectAccountByUserIdWhereProvider = async (
   userId: SelectAccount['userId'],
   provider: ExtendedAdapterAccountType,
@@ -51,5 +69,10 @@ export const selectGroupByName = async ({
   name: SelectGroup['name'];
 }) => {
   const [result] = await db.select().from(groups).where(eq(groups.name, name));
+  return result;
+};
+
+export const selectGroupById = async (id: SelectGroup['id']) => {
+  const [result] = await db.select().from(groups).where(eq(groups.id, id));
   return result;
 };
