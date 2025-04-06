@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 
-import authConfig from '@/config/nextauth.config';
+import authConfig from '@/lib/nextauth.config';
 import { db } from '@/db';
 import { updateUserEmailVerified } from '@/db-access/update';
 import { selectUserById } from '@/db-access/select';

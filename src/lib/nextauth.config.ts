@@ -44,6 +44,8 @@ export default {
 
           // by default next-auth doesn't expect user to have an account when signing in via credentials
 
+          console.log('validation success--------------');
+
           const existingUser = await queryFindUserByEmailWithAcctWhereProvider(
             email,
             'credentials',

@@ -13,6 +13,6 @@ const appConfig = (function createConfig() {
   };
 })();
 
-console.log('appConfig', appConfig);
+// console.log('appConfig', appConfig);
 
 export default appConfig;
