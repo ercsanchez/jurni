@@ -1,5 +1,5 @@
 import {
-  // boolean,
+  boolean,
   // foreignKey,
   integer,
   pgTable,
@@ -36,6 +36,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   accounts: many(accounts),
   profile: one(userProfiles),
   ownedGroups: many(groups, { relationName: 'ownership' }),
+  joinRequests: many(joinRequests),
   memberships: many(memberships),
   employments: many(employments),
 
@@ -156,11 +157,48 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
     references: [users.id],
     relationName: 'ownership',
   }),
+  joinRequests: many(joinRequests),
   memberships: many(memberships),
   employments: many(employments),
 }));
 
 // groupSessions
+
+export const joinRequests = pgTable(
+  'joinRequest',
+  {
+    userId: text('user_id').notNull(),
+    groupId: text('group_id').notNull(),
+    invitedBy: text('invited_by'),
+    confirmed: boolean(),
+    evaluatedBy: text('evaluated_by'),
+    evaluatedAt: timestamp('evaluated_at', { mode: 'date' }),
+
+    // createdBy: text('created_by').notNull(), // only user can create a join request
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
+);
+
+// join request confirmed: joinRequest will be deleted and membership will be created
+// join request rejected: confirmed=false & evaluatedBy has a value
+// if evaluatedBy or confirmed is null, join request has not yet been evaluated
+
+// add invitedBy, invitedAt
+// payment and attendace confirmation requests could be placed here
+
+export const joinRequestsRelations = relations(joinRequests, ({ one }) => ({
+  group: one(groups, {
+    fields: [joinRequests.groupId],
+    references: [groups.id],
+  }),
+  user: one(users, {
+    fields: [joinRequests.userId],
+    references: [users.id],
+  }),
+
+  // membership: one(memberships),
+}));
 
 export const memberships = pgTable(
   'membership',
@@ -168,12 +206,23 @@ export const memberships = pgTable(
     userId: text('user_id').notNull(),
     groupId: text('group_id').notNull(),
     invitedBy: text('invited_by'),
-    confirmedBy: text('confirmed_by').notNull(),
-    confirmedAt: timestamp('confirmed_at', { mode: 'date' }),
+    createdBy: text('created_by').notNull(), // should be the same value as joinRequests.evaluatedBy
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+
+    // dont use this | better to have table for status changes
+    // lastEditedAt: timestamp('last_edited_at', { mode: 'date' }),
+    // lastEditedBy: text('last_edited_by'),
   },
   (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
 );
+
+// payment status: current, past-due
+// member status: active (at least 1 checkin in the last 30 days), inactive (cron job based on no checkins for the last 30 days), banned (user cannot rejoin until unbanned), cancelled (user or employee initiated )
+// remarks:
+
+// invitedBy, evaluatedBy or createdBy - data carried over from member requests
+
+// better if requests are on a separate table coz we will also have a status field for members (banned, active, inactive, injured) | we dont want to do too much filtering
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({
   group: one(groups, {
@@ -184,6 +233,11 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
     fields: [memberships.userId],
     references: [users.id],
   }),
+
+  // joinRequest: one(joinRequests, {
+  //   fields: [memberships.userId, memberships.groupId],
+  //   references: [joinRequests.userId, joinRequests.groupId],
+  // }),
 }));
 
 export const employments = pgTable(
@@ -197,6 +251,9 @@ export const employments = pgTable(
   },
   (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
 );
+
+// employment status: active, inactive, banned, resigned, terminated
+// remarks: terminated, resigned, on leave, etc.
 
 export const employmentsRelations = relations(employments, ({ one }) => ({
   group: one(groups, {
@@ -222,6 +279,9 @@ export type SelectUserProfile = typeof userProfiles.$inferSelect;
 
 export type InsertGroup = typeof groups.$inferInsert;
 export type SelectGroup = typeof groups.$inferSelect;
+
+export type InsertJoinRequest = typeof joinRequests.$inferInsert;
+export type SelectJoinRequest = typeof joinRequests.$inferSelect;
 
 export type InsertMembership = typeof memberships.$inferInsert;
 export type SelectMembership = typeof memberships.$inferSelect;
