@@ -85,8 +85,18 @@ export const AllSearchParamsSchema = z
 //   message: `URL query param ("all") must be true or false.`,
 // }),
 
+// change this to UserIdsSchema
 export const InsertDeleteMembershipsEmploymentsSchema = z.object({
   userIds: z
     .array(z.string().min(1, { message: 'Empty user to delete.' }))
     .nonempty({ message: "You haven't defined any users to delete." }),
+});
+
+export const EvaluateJoinRequestsSchema = z.object({
+  userIds: z
+    .array(z.string().min(1, { message: 'Invalid User id.' }))
+    .nonempty({
+      message: "You haven't defined any Join Requests to evaluate.",
+    }),
+  confirmed: z.nullable(z.boolean({ message: 'Request must be denied.' })),
 });

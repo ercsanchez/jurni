@@ -1,7 +1,15 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { groups, users, type SelectGroup, type SelectUser } from '@/db/schema';
+import {
+  groups,
+  joinRequests,
+  users,
+  type SelectGroup,
+  type SelectJoinRequest,
+  type SelectUser,
+} from '@/db/schema';
+import { nullIfEmptyArrOrStr } from '@/utils';
 
 export const updateUserEmailVerified = async (userId: SelectUser['id']) => {
   const [result] = await db
@@ -42,4 +50,28 @@ export const updateGroup = async ({
     .returning({ id: groups.id, name: groups.name, ownerId: groups.ownerId });
 
   return result ?? null;
+};
+
+export const updateJoinRequests = async (data: {
+  userIds: Array<SelectJoinRequest['userId']>;
+  groupId: SelectJoinRequest['groupId'];
+  confirmed: SelectJoinRequest['confirmed'];
+  evaluatedBy: SelectJoinRequest['evaluatedBy'];
+}) => {
+  const { userIds, groupId, evaluatedBy, confirmed, ...rest } = data;
+  // const evaluatedAt = new Date(Date.now());
+
+  const evaluationData = Object.is(confirmed, null)
+    ? { confirmed: null, evaluatedBy: null, evaluatedAt: null }
+    : { confirmed, evaluatedBy, evaluatedAt: new Date(Date.now()) };
+
+  const result = await db
+    .update(joinRequests)
+    .set({ ...evaluationData, ...rest })
+    .where(
+      sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
+    )
+    .returning();
+
+  return nullIfEmptyArrOrStr(result);
 };

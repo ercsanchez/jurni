@@ -4,10 +4,12 @@ import { db } from '@/db';
 import {
   accounts,
   groups,
+  joinRequests,
   users,
   type ExtendedAdapterAccountType,
   type SelectAccount,
   type SelectGroup,
+  type SelectJoinRequest,
   type SelectUser,
 } from '@/db/schema';
 import { nullIfEmptyArrOrStr } from '@/utils';
@@ -74,5 +76,14 @@ export const selectGroupByName = async ({
 
 export const selectGroupById = async (id: SelectGroup['id']) => {
   const [result] = await db.select().from(groups).where(eq(groups.id, id));
+  return result;
+};
+
+export const selJoinRequest = async (userId: SelectJoinRequest['userId']) => {
+  const [result] = await db
+    .select()
+    .from(joinRequests)
+    .where(eq(joinRequests.userId, userId));
+
   return result;
 };

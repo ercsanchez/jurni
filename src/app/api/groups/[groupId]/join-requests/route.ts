@@ -1,0 +1,157 @@
+import { currentAuthUser } from '@/lib/nextauth';
+import { SelectUser } from '@/db/schema';
+import { qryGroupById } from '@/db-access/query';
+import { selectUserById, selectUsersByIds } from '@/db-access/select';
+import { txDeleteJoinReqsInsertMemberships } from '@/db-access/transaction';
+import { updateJoinRequests } from '@/db-access/update';
+import { httpRes, serverResponseError, zodValidate } from '@/utils';
+import { EvaluateJoinRequestsSchema } from '@/zod-schemas';
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ groupId: string }> },
+) {
+  try {
+    const sessionUser = await currentAuthUser();
+    if (!sessionUser)
+      return httpRes.unauthenticated({ message: 'User is not authenticated.' });
+
+    const existingUser = await selectUserById(sessionUser!.id!);
+
+    if (!existingUser)
+      return httpRes.notFound({
+        message: 'Current Auth User does not exist.',
+      });
+
+    const { groupId } = await params;
+
+    const existingGroup = await qryGroupById({
+      groupId,
+      whereEmployeeUserId: sessionUser.id!,
+    });
+
+    if (!existingGroup)
+      return httpRes.notFound({ message: 'Group does not exist.' });
+
+    // current user is not the group owner
+    if (sessionUser.id !== existingGroup.ownerId) {
+      const [currentUserEmployee] = existingGroup.employments;
+      if (!currentUserEmployee) {
+        return httpRes.forbidden({
+          message:
+            'Only the Group Owner or an Employee can evaluate the Join Requests.',
+        });
+      }
+    }
+
+    const data = await req.json();
+
+    const validation = zodValidate(EvaluateJoinRequestsSchema, data);
+
+    if (!validation?.success) {
+      return httpRes.badRequest({ message: validation?.message });
+    }
+
+    const { userIds, confirmed } = validation.data;
+
+    const existingUsers = await selectUsersByIds(userIds);
+
+    if (!existingUsers) {
+      return httpRes.badRequest({
+        message: 'All of the Users, to confirm Join Requests, do not exist.',
+      });
+    }
+
+    const existingUserIds = (existingUsers as Array<SelectUser>).map(
+      (i: SelectUser) => i.id,
+    );
+
+    let membershipsCreationMsg, result;
+    if (confirmed) {
+      membershipsCreationMsg = 'Memberships successfully created.';
+
+      result = await txDeleteJoinReqsInsertMemberships({
+        userIds: existingUserIds,
+        groupId,
+        createdBy: sessionUser.id!,
+      });
+    } else {
+      // employee/owner rejects Join Requests (confirmed = false) | employee/owner can also remove the Join Request's evaluation (confirmed = null)
+      result = await updateJoinRequests({
+        userIds: existingUserIds,
+        groupId,
+        confirmed,
+        evaluatedBy: sessionUser.id!,
+      });
+    }
+
+    if (!result)
+      return httpRes.badRequest({
+        message: `Join Requests not evaluated.`,
+      });
+
+    return httpRes.ok({
+      message:
+        `Join Requests successfully ${confirmed ? 'deleted' : 'rejected'}. ` +
+        membershipsCreationMsg,
+      data: result,
+    });
+  } catch (error: unknown) {
+    return serverResponseError(error);
+  }
+}
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ groupId: string }> },
+) {
+  try {
+    const sessionUser = await currentAuthUser();
+    if (!sessionUser)
+      return httpRes.unauthenticated({ message: 'User is not authenticated.' });
+
+    const existingUser = await selectUserById(sessionUser!.id!);
+
+    if (!existingUser)
+      return httpRes.notFound({
+        message: 'User does not exist.',
+      });
+
+    const { groupId } = await params;
+
+    // query group with current auth user's unconfirmed join request
+    const existingGroup = await qryGroupById({
+      groupId,
+      whereEmployeeUserId: sessionUser.id!,
+      withJoinReqs: true,
+    });
+
+    if (!existingGroup)
+      return httpRes.notFound({ message: 'Group does not exist.' });
+
+    // current user is not the group owner
+    if (sessionUser.id !== existingGroup.ownerId) {
+      const [currentUserEmployee] = existingGroup.employments;
+      if (!currentUserEmployee) {
+        return httpRes.forbidden({
+          message:
+            'Only the group Owner or an Employee can get the Join Requests.',
+        });
+      }
+    }
+
+    const [result] = existingGroup.joinRequests;
+
+    if (!result)
+      return httpRes.ok({
+        message: 'No existing Join Requests for the Group.',
+      });
+
+    return httpRes.ok({
+      message: 'Join Requests successfully retrieved.',
+      data: result,
+    });
+  } catch (error: unknown) {
+    return serverResponseError(error);
+  }
+}

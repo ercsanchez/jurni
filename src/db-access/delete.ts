@@ -1,13 +1,52 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, isNull } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
   employments,
+  joinRequests,
   memberships,
   type SelectEmployment,
+  type SelectJoinRequest,
   type SelectMembership,
 } from '@/db/schema';
 import { nullIfEmptyArrOrStr } from '@/utils';
+
+export const delJoinReq = async ({
+  userId,
+  groupId,
+}: {
+  userId: SelectJoinRequest['userId'];
+  groupId: SelectJoinRequest['groupId'];
+}) => {
+  const [result] = await db
+    .delete(joinRequests)
+    .where(
+      and(eq(joinRequests.userId, userId), eq(joinRequests.groupId, groupId)),
+    )
+    .returning();
+
+  return result ?? null;
+};
+
+export const delUnevaluatedJoinReq = async ({
+  userId,
+  groupId,
+}: {
+  userId: SelectJoinRequest['userId'];
+  groupId: SelectJoinRequest['groupId'];
+}) => {
+  const [result] = await db
+    .delete(joinRequests)
+    .where(
+      and(
+        eq(joinRequests.userId, userId),
+        eq(joinRequests.groupId, groupId),
+        isNull(joinRequests.confirmed), // only unevaluated
+      ),
+    )
+    .returning();
+  return result ?? null;
+};
 
 export const deleteMembershipById = async ({
   userId,

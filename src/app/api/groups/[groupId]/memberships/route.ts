@@ -1,6 +1,6 @@
 import { currentAuthUser } from '@/lib/nextauth';
 import { insertMemberships } from '@/db-access/insert';
-import { queryFindGroupByIdWithMemberships } from '@/db-access/query';
+import { qryGroupById } from '@/db-access/query';
 import {
   selectGroupById,
   selectUserById,
@@ -90,7 +90,7 @@ export const POST = async function POST(
     const result = await insertMemberships({
       userIds: existingUserIds,
       groupId,
-      confirmedBy: sessionUser.id!,
+      createdBy: sessionUser.id!,
     });
 
     // no result if membership already exists
@@ -186,8 +186,17 @@ export const GET = async function GET(
 
     const { groupId } = await params;
 
-    const existingGroupWithMemberships =
-      await queryFindGroupByIdWithMemberships(groupId);
+    // const existingGroupWithMemberships =
+    //   await queryFindGroupByIdWithMemberships(groupId);
+    const existingGroupWithMemberships = await qryGroupById({
+      groupId,
+      withMembers: true,
+    });
+
+    console.log(
+      '------------------',
+      existingGroupWithMemberships!['memberships'][1],
+    );
 
     if (!existingGroupWithMemberships)
       return httpRes.notFound({ message: 'Group does not exist.' });

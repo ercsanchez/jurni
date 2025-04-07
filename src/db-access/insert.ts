@@ -3,12 +3,14 @@ import {
   accounts,
   employments,
   groups,
+  joinRequests,
   memberships,
   users,
   userProfiles,
   type InsertAccount,
   type InsertEmployment,
   type InsertGroup,
+  type InsertJoinRequest,
   type InsertMembership,
   type InsertUser,
   type InsertUserProfile,
@@ -68,19 +70,34 @@ export const insertGroup = async (newGroup: InsertGroup) => {
   return result ?? null;
 };
 
+export const insertJoinRequest = async (newJoinReq: InsertJoinRequest) => {
+  const [result] = await db
+    .insert(joinRequests)
+    .values(newJoinReq)
+    .onConflictDoNothing({
+      target: [joinRequests.userId, joinRequests.groupId],
+    })
+    .returning({
+      userId: joinRequests.userId,
+      groupId: joinRequests.groupId,
+    });
+
+  return result ?? null;
+};
+
 export const insertMemberships = async ({
   userIds,
   groupId,
-  confirmedBy,
+  createdBy,
 }: {
   userIds: Array<InsertMembership['userId']>;
   groupId: InsertMembership['groupId'];
-  confirmedBy: InsertMembership['confirmedBy'];
+  createdBy: InsertMembership['createdBy'];
 }) => {
   const newMemberships: Array<InsertMembership> = userIds.map((userId) => ({
     userId,
     groupId,
-    confirmedBy,
+    createdBy,
   }));
 
   const result = await db
@@ -96,7 +113,7 @@ export const insertMemberships = async ({
     .returning({
       userId: memberships.userId,
       groupId: memberships.groupId,
-      confirmedBy: memberships.confirmedBy,
+      createdBy: memberships.createdBy,
       createdAt: memberships.createdAt,
     });
 
