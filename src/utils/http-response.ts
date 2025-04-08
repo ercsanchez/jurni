@@ -109,18 +109,24 @@ function httpResByStatus({
 
 // still needed, even though, we have httpResByStatus, since catched errors don't have a status code
 function serverResponseError(error: unknown, options?: { message: string }) {
+  console.error(error); // log where error occured in the route (if not already catched by the fn)
+
   const optionsMsg = options?.message;
-  if (optionsMsg) console.log(optionsMsg);
+
+  if (optionsMsg) console.log(optionsMsg); // log the supplied server response error message
 
   const { message: errorMsg, name: errorName } = error as Error;
-  const errorMsgWithName = `[${errorName}]: ${errorMsg}`;
-  console.error(new Error(errorMsgWithName));
+
+  // console.error(new Error(`[${errorName}]: ${errorMsg}`)); // don't use this since we won't be able to trace where the error occurred
+
+  const errorMsgWithName = `Error [${errorName}]: ${errorMsg}`;
 
   // any error that extends Error will be an instanceof it
   // possible error types: TypeError, NeonDbError, DrizzleError
   // throw new Error('Something went wrong on the server side.');
   // better to send a response since we can send additional info in response body
 
+  // this is just in case Rollback Transaction Error is not caught in the transaction query (no try-catch block inside of fn)
   if (error instanceof DrizzleError && errorMsg.includes('Rollback')) {
     return httpRes.internalServerErr({
       message: optionsMsg ?? `${errorMsgWithName} (Transaction failed)`,
@@ -129,7 +135,7 @@ function serverResponseError(error: unknown, options?: { message: string }) {
 
   const responseMsg = optionsMsg ?? errorMsgWithName;
 
-  // no need to handle if an error instance, since this fn will only be used in a catch block where an error object is received
+  // no need to handle if an error instance, since this fn will only be used in a catch block where an error object is always received
 
   return httpRes.internalServerErr({
     message: responseMsg ?? 'Unknown Server Error',

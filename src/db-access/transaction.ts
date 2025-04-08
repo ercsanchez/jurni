@@ -16,82 +16,90 @@ import { nullIfEmptyArrOrStr } from '@/utils';
 export const insertUserAndAccountOnCredentialsRegister = async (
   newUser: InsertUser,
 ) => {
-  const result = await db.transaction(async (tx) => {
-    const insertedUsers = await tx
-      .insert(users)
-      .values(newUser)
-      .returning({ email: users.email, id: users.id });
+  try {
+    const result = await db.transaction(async (tx) => {
+      const insertedUsers = await tx
+        .insert(users)
+        .values(newUser)
+        .returning({ email: users.email, id: users.id });
 
-    const insertedUser = insertedUsers[0];
+      const insertedUser = insertedUsers[0];
 
-    // const insertedAccount = null;
+      // const insertedAccount = null;
 
-    const insertedAccount = await tx
-      .insert(accounts)
-      .values({
-        userId: insertedUser.id,
-        providerAccountId: insertedUser.id,
-        type: 'credentials',
-        provider: 'credentials',
-      })
-      .returning({
-        userId: accounts.userId,
-        providerAccountId: accounts.providerAccountId,
-        type: accounts.type,
-        provider: accounts.provider,
-      });
+      const insertedAccount = await tx
+        .insert(accounts)
+        .values({
+          userId: insertedUser.id,
+          providerAccountId: insertedUser.id,
+          type: 'credentials',
+          provider: 'credentials',
+        })
+        .returning({
+          userId: accounts.userId,
+          providerAccountId: accounts.providerAccountId,
+          type: accounts.type,
+          provider: accounts.provider,
+        });
 
-    if (!insertedUser || !insertedAccount) {
-      tx.rollback(); // will always throw an Error obj => "DrizzleError: Rollback"
-    }
+      if (!insertedUser || !insertedAccount) {
+        tx.rollback(); // will always throw an Error obj => "DrizzleError: Rollback"
+      }
 
-    return {
-      user: insertedUser,
-      account: insertedAccount,
-    };
-  });
+      return {
+        user: insertedUser,
+        account: insertedAccount,
+      };
+    });
 
-  // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
-  return result;
+    // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
+    return result;
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export const updateUserPasswordAndInsertCredentialsAccount = async (
   userId: SelectUser['id'],
   hashedPword: SelectUser['password'],
 ) => {
-  const result = await db.transaction(async (tx) => {
-    const [updatedUser] = await tx
-      .update(users)
-      .set({ password: hashedPword })
-      .where(eq(users.id, userId))
-      .returning({ id: users.id, email: users.email });
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [updatedUser] = await tx
+        .update(users)
+        .set({ password: hashedPword })
+        .where(eq(users.id, userId))
+        .returning({ id: users.id, email: users.email });
 
-    // const insertedAccount = null;
+      // const insertedAccount = null;
 
-    const [insertedAccount] = await tx
-      .insert(accounts)
-      .values({
-        userId: updatedUser.id,
-        providerAccountId: updatedUser.id,
-        type: 'credentials',
-        provider: 'credentials',
-      })
-      .returning({
-        userId: accounts.userId,
-        providerAccountId: accounts.providerAccountId,
-        type: accounts.type,
-        provider: accounts.provider,
-      });
+      const [insertedAccount] = await tx
+        .insert(accounts)
+        .values({
+          userId: updatedUser.id,
+          providerAccountId: updatedUser.id,
+          type: 'credentials',
+          provider: 'credentials',
+        })
+        .returning({
+          userId: accounts.userId,
+          providerAccountId: accounts.providerAccountId,
+          type: accounts.type,
+          provider: accounts.provider,
+        });
 
-    if (!updatedUser || !insertedAccount) {
-      tx.rollback(); // will always throw an Error obj => "DrizzleError: Rollback"
-    }
+      if (!updatedUser || !insertedAccount) {
+        tx.rollback(); // will always throw an Error obj => "DrizzleError: Rollback"
+      }
 
-    return { ...updatedUser, account: insertedAccount };
-  });
+      return { ...updatedUser, account: insertedAccount };
+    });
 
-  // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
-  return result ?? null;
+    // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
+    return result ?? null;
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 // INSERT MEMBERSHIPS FOR APPROVED JOIN REQUESTS (DELETED)
@@ -102,59 +110,63 @@ export const txDelJoinReqsThenInsMemberships = async (data: {
   createdBy: InsertJoinRequest['evaluatedBy'];
   // createdAt: InsertJoinRequest['evaluatedAt'];
 }) => {
-  const result = await db.transaction(async (tx) => {
-    // const updatedJoinReqs = await tx
-    //   .update(joinRequests)
-    //   .set({ ...rest, confirmed: true })
-    //   .where(
-    //     sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
-    //   )
-    //   .returning();
+  try {
+    const result = await db.transaction(async (tx) => {
+      // const updatedJoinReqs = await tx
+      //   .update(joinRequests)
+      //   .set({ ...rest, confirmed: true })
+      //   .where(
+      //     sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
+      //   )
+      //   .returning();
 
-    const { userIds, groupId, createdBy } = data;
+      const { userIds, groupId, createdBy } = data;
 
-    const deletedJoinRequests = await tx
-      .delete(joinRequests)
-      .where(
-        sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
-      )
-      .returning();
+      const deletedJoinRequests = await tx
+        .delete(joinRequests)
+        .where(
+          sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
+        )
+        .returning();
 
-    if (!nullIfEmptyArrOrStr(deletedJoinRequests)) tx.rollback();
+      if (!nullIfEmptyArrOrStr(deletedJoinRequests)) tx.rollback();
 
-    const newMemberships = deletedJoinRequests.map((joinReq) => {
-      const { userId, groupId, invitedBy } = joinReq;
-      return { userId, groupId, invitedBy, createdBy };
-    });
-
-    console.log('newMemberships', newMemberships);
-
-    const insertedMemberships = await tx
-      .insert(memberships)
-      .values(newMemberships as InsertMembership[])
-      .onConflictDoNothing({
-        target: [memberships.userId, memberships.groupId],
-      })
-      .returning({
-        userId: memberships.userId,
-        groupId: memberships.groupId,
-        createdBy: memberships.createdBy,
+      const newMemberships = deletedJoinRequests.map((joinReq) => {
+        const { userId, groupId, invitedBy } = joinReq;
+        return { userId, groupId, invitedBy, createdBy };
       });
 
-    // if (
-    //   !nullIfEmptyArrOrStr(updatedJoinReqs) ||
-    //   !nullIfEmptyArrOrStr(insertMemberships)
-    // ) {
-    //   tx.rollback(); // will always throw an Error obj => "DrizzleError: Rollback"
-    // }
+      // console.log('newMemberships', newMemberships);
 
-    if (!nullIfEmptyArrOrStr(insertedMemberships)) tx.rollback();
+      const insertedMemberships = await tx
+        .insert(memberships)
+        .values(newMemberships as InsertMembership[])
+        .onConflictDoNothing({
+          target: [memberships.userId, memberships.groupId],
+        })
+        .returning({
+          userId: memberships.userId,
+          groupId: memberships.groupId,
+          createdBy: memberships.createdBy,
+        });
 
-    return { deletedJoinRequests, insertedMemberships };
-  });
+      // if (
+      //   !nullIfEmptyArrOrStr(updatedJoinReqs) ||
+      //   !nullIfEmptyArrOrStr(insertMemberships)
+      // ) {
+      //   tx.rollback(); // will always throw an Error obj => "DrizzleError: Rollback"
+      // }
 
-  // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
-  return nullIfEmptyArrOrStr(result);
+      if (!nullIfEmptyArrOrStr(insertedMemberships)) tx.rollback();
+
+      return { deletedJoinRequests, insertedMemberships };
+    });
+
+    // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
+    return result;
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 //
@@ -164,35 +176,41 @@ export const txInsMembershipsAndDelJoinReqsIfExists = async (data: {
   createdBy: InsertMembership['createdBy'];
   invitedBy?: InsertMembership['invitedBy'];
 }) => {
-  const result = await db.transaction(async (tx) => {
-    const { userIds, groupId, ...rest } = data;
+  try {
+    const result = await db.transaction(async (tx) => {
+      const { userIds, groupId, ...rest } = data;
 
-    const newMemberships = userIds.map((id) => {
-      return { userId: id, groupId, ...rest };
+      const newMemberships = userIds.map((id) => {
+        return { userId: id, groupId, ...rest };
+      });
+
+      const insertedMemberships = await tx
+        .insert(memberships)
+        .values(newMemberships)
+        .onConflictDoNothing({
+          target: [memberships.userId, memberships.groupId],
+        })
+        .returning();
+
+      if (!nullIfEmptyArrOrStr(insertedMemberships)) tx.rollback();
+
+      // deletedJoinRequests may be empty [] since userId may not have an existing Join Request
+      // inserting a membership should always trigger deletion of its join request (if exists)
+      const deletedJoinRequests = await tx
+        .delete(joinRequests)
+        .where(
+          sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
+        )
+        .returning();
+
+      // transaction also fails if any of the queries above fail (even w/o explicityly running tx.rollback(), if a null result is returned from a query)
+
+      return { insertedMemberships, deletedJoinRequests };
     });
 
-    const insertedMemberships = await tx
-      .insert(memberships)
-      .values(newMemberships)
-      .onConflictDoNothing({
-        target: [memberships.userId, memberships.groupId],
-      })
-      .returning();
-
-    if (!nullIfEmptyArrOrStr(insertedMemberships)) tx.rollback();
-
-    const deletedJoinRequests = await tx
-      .delete(joinRequests)
-      .where(
-        sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
-      )
-      .returning();
-
-    // transaction also fails if any of the queries above fail (even w/o explicityly running tx.rollback(), after no result from a query)
-
-    return { insertedMemberships, deletedJoinRequests };
-  });
-
-  // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
-  return nullIfEmptyArrOrStr(result);
+    // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
+    return result;
+  } catch (error) {
+    console.error(error);
+  }
 };
