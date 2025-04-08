@@ -120,33 +120,32 @@ export const insertJoinRequest = async (newJoinReq: InsertJoinRequest) => {
 //   return nullIfEmptyArrOrStr(result);
 // };
 
-export const insertEmployments = async ({
+export const insEmployments = async ({
   userIds,
   groupId,
-  addedBy,
+  createdBy,
 }: {
   userIds: Array<InsertEmployment['userId']>;
   groupId: InsertEmployment['groupId'];
-  addedBy: InsertEmployment['addedBy'];
+  createdBy: InsertEmployment['createdBy'];
 }) => {
-  const newEmployments: Array<InsertEmployment> = userIds.map((userId) => ({
-    userId,
-    groupId,
-    addedBy,
-  }));
+  try {
+    const newEmployments: Array<InsertEmployment> = userIds.map((id) => ({
+      userId: id,
+      groupId,
+      createdBy,
+    }));
 
-  const result = await db
-    .insert(employments)
-    .values(newEmployments)
-    .onConflictDoNothing({
-      target: [employments.userId, employments.groupId],
-    })
-    .returning({
-      userId: employments.userId,
-      groupId: employments.groupId,
-      addedBy: employments.addedBy,
-      createdAt: employments.createdAt,
-    });
+    const result = await db
+      .insert(employments)
+      .values(newEmployments)
+      .onConflictDoNothing({
+        target: [employments.userId, employments.groupId],
+      })
+      .returning();
 
-  return nullIfEmptyArrOrStr(result);
+    return nullIfEmptyArrOrStr(result);
+  } catch (error) {
+    console.error(error);
+  }
 };

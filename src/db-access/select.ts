@@ -29,21 +29,25 @@ export const selectUserById = async (id: SelectUser['id']) => {
 };
 
 export const selectUsersByIds = async (userIds: Array<SelectUser['id']>) => {
-  // const query = db
-  //   .select()
-  //   .from(users)
-  //   .where(sql`${users.id} IN ${userIds}`)
-  //   .toSQL();
-  // console.log('query check ====>', query);
+  try {
+    // const query = db
+    //   .select()
+    //   .from(users)
+    //   .where(sql`${users.id} IN ${userIds}`)
+    //   .toSQL();
+    // console.log('query check ====>', query);
 
-  const result = await db
-    .select()
-    .from(users)
-    .where(sql`${users.id} IN ${userIds}`);
+    const result = await db
+      .select()
+      .from(users)
+      .where(sql`${users.id} IN ${userIds}`);
 
-  // console.log('query result =======>', result);
+    // console.log('query result =======>', result);
 
-  return nullIfEmptyArrOrStr(result);
+    return nullIfEmptyArrOrStr(result);
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export const selectAccountByUserIdWhereProvider = async (

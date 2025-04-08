@@ -185,58 +185,62 @@ export const qryGroupById = async ({
   withMembers?: boolean;
   withJoinReqs?: boolean;
 }) => {
-  // const withMemberships: { memberships: { with: { user: true } } } | object =
-  //   withMembers ? { memberships: { with: { user: true } } } : {};
+  try {
+    // const withMemberships: { memberships: { with: { user: true } } } | object =
+    //   withMembers ? { memberships: { with: { user: true } } } : {};
 
-  // const withJoinRequests: { joinRequests: { with: { user: true } } } | object =
-  //   withJoinReqs ? { joinRequests: { with: { user: true } } } : {};
+    // const withJoinRequests: { joinRequests: { with: { user: true } } } | object =
+    //   withJoinReqs ? { joinRequests: { with: { user: true } } } : {};
 
-  const result = await db.query.groups.findFirst({
-    where: eq(groups.id, groupId),
-    with: {
-      employments: whereEmployeeUserId
-        ? // get employee record of current auth user
-          { where: eq(employments.userId, whereEmployeeUserId!) }
-        : withEmployees
-          ? { with: { user: true } } // get all employees
-          : {},
+    const result = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId),
+      with: {
+        employments: whereEmployeeUserId
+          ? // get employee record of current auth user
+            { where: eq(employments.userId, whereEmployeeUserId!) }
+          : withEmployees
+            ? { with: { user: true } } // get all employees
+            : {},
 
-      memberships: whereMemberUserId
-        ? { where: eq(memberships.userId, whereMemberUserId!) }
-        : withMembers
-          ? { with: { user: true } }
-          : {},
+        memberships: whereMemberUserId
+          ? { where: eq(memberships.userId, whereMemberUserId!) }
+          : withMembers
+            ? { with: { user: true } }
+            : {},
 
-      joinRequests: whereJoinReqUserId
-        ? { where: eq(joinRequests.userId, whereJoinReqUserId!) }
-        : withJoinReqs
-          ? { with: { user: true } }
-          : {},
+        joinRequests: whereJoinReqUserId
+          ? { where: eq(joinRequests.userId, whereJoinReqUserId!) }
+          : withJoinReqs
+            ? { with: { user: true } }
+            : {},
 
-      // ...(withJoinReqs && { joinRequests: { with: { user: true } } }),
+        // ...(withJoinReqs && { joinRequests: { with: { user: true } } }),
 
-      // ...(withMembers && {
-      //   memberships: { with: { user: true, joinRequest: true } },
-      // }),
+        // ...(withMembers && {
+        //   memberships: { with: { user: true, joinRequest: true } },
+        // }),
 
-      // ...withMemberships,
-    },
-  });
+        // ...withMemberships,
+      },
+    });
 
-  return result ?? null;
+    return result ?? null;
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 // redundant | use qryGroupById
-export const queryFindGroupByIdWithEmployments = async (
-  groupId: SelectGroup['id'],
-) => {
-  const result = await db.query.groups.findFirst({
-    where: eq(groups.id, groupId),
-    with: { employments: { with: { user: true } } },
-  });
+// export const queryFindGroupByIdWithEmployments = async (
+//   groupId: SelectGroup['id'],
+// ) => {
+//   const result = await db.query.groups.findFirst({
+//     where: eq(groups.id, groupId),
+//     with: { employments: { with: { user: true } } },
+//   });
 
-  return result ?? null;
-};
+//   return result ?? null;
+// };
 
 // export const qryGroupByIdWithJoinReqByUserId = async ({
 //   groupId,
