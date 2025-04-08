@@ -4,7 +4,7 @@ import { qryGroupById } from '@/db-access/query';
 import { selectUserById, selectUsersByIds } from '@/db-access/select';
 import { txInsMembershipsAndDelJoinReqsIfExists } from '@/db-access/transaction';
 import { httpRes, serverResponseError, zodValidate } from '@/utils';
-import { InsertDeleteMembershipsEmploymentsSchema } from '@/zod-schemas';
+import { UserIdsSchema } from '@/zod-schemas';
 
 export const POST = async function POST(
   req: Request,
@@ -51,10 +51,7 @@ export const POST = async function POST(
 
     const data = await req.json();
 
-    const validation = zodValidate(
-      InsertDeleteMembershipsEmploymentsSchema,
-      data,
-    );
+    const validation = zodValidate(UserIdsSchema, data);
 
     if (!validation?.success) {
       // console.error(new Error(`Zod Validation Error: ${validation.message}`));
@@ -97,10 +94,10 @@ export const POST = async function POST(
       createdBy: sessionUser.id!,
     });
 
-    // no result if membership already exists
+    // no result if memberships/(s) already exist
     if (!result)
       return httpRes.badRequest({
-        message: 'Membership/(s) not created.',
+        message: 'Membership/(s) already exist.',
       });
 
     return httpRes.ok({
@@ -178,7 +175,7 @@ export const GET = async function GET(
 //     const data = await req.json();
 
 //     const validation = zodValidate(
-//       InsertDeleteMembershipsEmploymentsSchema,
+//       UserIdsSchema,
 //       data,
 //     );
 

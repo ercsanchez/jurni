@@ -7,7 +7,7 @@ import {
   selectUsersByIds,
 } from '@/db-access/select';
 import { httpRes, serverResponseError, zodValidate } from '@/utils';
-import { InsertDeleteMembershipsEmploymentsSchema } from '@/zod-schemas';
+import { UserIdsSchema } from '@/zod-schemas';
 import { SelectUser } from '@/db/schema';
 import { deleteEmploymentsByIds } from '@/db-access/delete';
 
@@ -48,10 +48,7 @@ export const POST = async function POST(
 
     const data = await req.json();
 
-    const validation = zodValidate(
-      InsertDeleteMembershipsEmploymentsSchema,
-      data,
-    );
+    const validation = zodValidate(UserIdsSchema, data);
 
     if (!validation?.success) {
       return httpRes.badRequest({ message: validation?.message });
@@ -124,10 +121,7 @@ export const DELETE = async function DELETE(
 
     const data = await req.json();
 
-    const validation = zodValidate(
-      InsertDeleteMembershipsEmploymentsSchema,
-      data,
-    );
+    const validation = zodValidate(UserIdsSchema, data);
 
     if (!validation?.success) {
       return httpRes.badRequest({ message: validation?.message });
