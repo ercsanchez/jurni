@@ -245,8 +245,7 @@ export const employments = pgTable(
   {
     userId: text('user_id').notNull(),
     groupId: text('group_id').notNull(),
-    addedBy: text('added_by').notNull(),
-    addedAt: timestamp('added_at', { mode: 'date' }),
+    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
