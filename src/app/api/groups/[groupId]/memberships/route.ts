@@ -1,18 +1,10 @@
 import { currentAuthUser } from '@/lib/nextauth';
-import { insertMemberships } from '@/db-access/insert';
+import { SelectUser } from '@/db/schema';
 import { qryGroupById } from '@/db-access/query';
-import {
-  selectGroupById,
-  selectUserById,
-  selectUsersByIds,
-} from '@/db-access/select';
+import { selectUserById, selectUsersByIds } from '@/db-access/select';
+import { txInsMembershipsAndDelJoinReqsIfExists } from '@/db-access/transaction';
 import { httpRes, serverResponseError, zodValidate } from '@/utils';
 import { InsertDeleteMembershipsEmploymentsSchema } from '@/zod-schemas';
-import { SelectUser } from '@/db/schema';
-import {
-  // deleteMembershipById,
-  deleteMembershipsByIds,
-} from '@/db-access/delete';
 
 export const POST = async function POST(
   req: Request,
@@ -36,13 +28,25 @@ export const POST = async function POST(
 
     const { groupId } = await params;
 
-    const existingGroup = await selectGroupById(groupId);
-
-    // console.log('existing group ======>', existingGroup);
+    const existingGroup = await qryGroupById({
+      groupId,
+      whereEmployeeUserId: sessionUser.id,
+    });
 
     if (!existingGroup) {
       console.log('running');
       return httpRes.notFound({ message: 'Group does not exist.' });
+    }
+
+    // current user is not the group owner
+    if (sessionUser.id !== existingGroup.ownerId) {
+      const [currentUserEmployee] = existingGroup.employments;
+      if (!currentUserEmployee) {
+        return httpRes.forbidden({
+          message:
+            'Only the Group Owner or an Employee can create Memberships.',
+        });
+      }
     }
 
     const data = await req.json();
@@ -74,11 +78,11 @@ export const POST = async function POST(
 
     // USING SQL OPERATOR ------------------------------------------------
     const existingUsers = await selectUsersByIds(validation.data.userIds);
-    console.log('existingUsers using sql statement=====>', existingUsers);
+    // console.log('existingUsers using sql statement=====>', existingUsers);
 
     if (!existingUsers) {
       return httpRes.badRequest({
-        message: 'Users to add as members do not exist.',
+        message: 'Users to add as Members do not exist.',
       });
     }
 
@@ -87,7 +91,7 @@ export const POST = async function POST(
     );
     // -------------------------------------------------------------------
 
-    const result = await insertMemberships({
+    const result = await txInsMembershipsAndDelJoinReqsIfExists({
       userIds: existingUserIds,
       groupId,
       createdBy: sessionUser.id!,
@@ -108,69 +112,10 @@ export const POST = async function POST(
   }
 };
 
-export const DELETE = async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
-) {
-  console.log('running DELETE /groups/[id]/memberships');
-
-  try {
-    const sessionUser = await currentAuthUser();
-
-    if (!sessionUser)
-      return httpRes.unauthenticated({ message: 'User is not authenticated.' });
-
-    const existingUser = await selectUserById(sessionUser!.id!);
-
-    // need to also check if auth user is an employee of this group
-    if (!existingUser)
-      return httpRes.notFound({
-        message: 'Account does not exist.',
-      });
-
-    const { groupId } = await params;
-
-    const existingGroup = await selectGroupById(groupId);
-
-    if (!existingGroup)
-      return httpRes.notFound({ message: 'Group does not exist.' });
-
-    const data = await req.json();
-
-    const validation = zodValidate(
-      InsertDeleteMembershipsEmploymentsSchema,
-      data,
-    );
-
-    if (!validation?.success) {
-      return httpRes.badRequest({ message: validation?.message });
-    }
-
-    const result = await deleteMembershipsByIds({
-      userIds: validation.data.userIds,
-      groupId,
-    });
-
-    if (!result)
-      return httpRes.badRequest({
-        message: 'Membership/(s) to delete do not exist.',
-      });
-
-    return httpRes.ok({
-      message: 'Membership/(s) successfully deleted.',
-      data: result,
-    });
-  } catch (error: unknown) {
-    return serverResponseError(error);
-  }
-};
-
 export const GET = async function GET(
   _req: Request,
   { params }: { params: Promise<{ groupId: string }> },
 ) {
-  console.log('running GET /groups/[id]/memberships');
-
   try {
     const sessionUser = await currentAuthUser();
 
@@ -186,26 +131,76 @@ export const GET = async function GET(
 
     const { groupId } = await params;
 
-    // const existingGroupWithMemberships =
-    //   await queryFindGroupByIdWithMemberships(groupId);
-    const existingGroupWithMemberships = await qryGroupById({
+    const existingGroup = await qryGroupById({
       groupId,
       withMembers: true,
     });
 
-    console.log(
-      '------------------',
-      existingGroupWithMemberships!['memberships'][1],
-    );
-
-    if (!existingGroupWithMemberships)
+    if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
 
     return httpRes.ok({
       message: 'Memberships successfully retrieved.',
-      data: existingGroupWithMemberships.memberships,
+      data: existingGroup.memberships,
     });
   } catch (error: unknown) {
     return serverResponseError(error);
   }
 };
+
+// export const DELETE = async function DELETE(
+//   req: Request,
+//   { params }: { params: Promise<{ groupId: string }> },
+// ) {
+//   console.log('running DELETE /groups/[id]/memberships');
+
+//   try {
+//     const sessionUser = await currentAuthUser();
+
+//     if (!sessionUser)
+//       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
+
+//     const existingUser = await selectUserById(sessionUser!.id!);
+
+//     // need to also check if auth user is an employee of this group
+//     if (!existingUser)
+//       return httpRes.notFound({
+//         message: 'Account does not exist.',
+//       });
+
+//     const { groupId } = await params;
+
+//     const existingGroup = await selectGroupById(groupId);
+
+//     if (!existingGroup)
+//       return httpRes.notFound({ message: 'Group does not exist.' });
+
+//     const data = await req.json();
+
+//     const validation = zodValidate(
+//       InsertDeleteMembershipsEmploymentsSchema,
+//       data,
+//     );
+
+//     if (!validation?.success) {
+//       return httpRes.badRequest({ message: validation?.message });
+//     }
+
+//     const result = await deleteMembershipsByIds({
+//       userIds: validation.data.userIds,
+//       groupId,
+//     });
+
+//     if (!result)
+//       return httpRes.badRequest({
+//         message: 'Membership/(s) to delete do not exist.',
+//       });
+
+//     return httpRes.ok({
+//       message: 'Membership/(s) successfully deleted.',
+//       data: result,
+//     });
+//   } catch (error: unknown) {
+//     return serverResponseError(error);
+//   }
+// };

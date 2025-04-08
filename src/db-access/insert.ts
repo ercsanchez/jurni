@@ -4,14 +4,14 @@ import {
   employments,
   groups,
   joinRequests,
-  memberships,
+  // memberships,
   users,
   userProfiles,
   type InsertAccount,
   type InsertEmployment,
   type InsertGroup,
   type InsertJoinRequest,
-  type InsertMembership,
+  // type InsertMembership,
   type InsertUser,
   type InsertUserProfile,
 } from '@/db/schema';
@@ -85,40 +85,40 @@ export const insertJoinRequest = async (newJoinReq: InsertJoinRequest) => {
   return result ?? null;
 };
 
-export const insertMemberships = async ({
-  userIds,
-  groupId,
-  createdBy,
-}: {
-  userIds: Array<InsertMembership['userId']>;
-  groupId: InsertMembership['groupId'];
-  createdBy: InsertMembership['createdBy'];
-}) => {
-  const newMemberships: Array<InsertMembership> = userIds.map((userId) => ({
-    userId,
-    groupId,
-    createdBy,
-  }));
+// export const insertMemberships = async ({
+//   userIds,
+//   groupId,
+//   createdBy,
+// }: {
+//   userIds: Array<InsertMembership['userId']>;
+//   groupId: InsertMembership['groupId'];
+//   createdBy: InsertMembership['createdBy'];
+// }) => {
+//   const newMemberships: Array<InsertMembership> = userIds.map((userId) => ({
+//     userId,
+//     groupId,
+//     createdBy,
+//   }));
 
-  const result = await db
-    .insert(memberships)
-    .values(newMemberships)
-    .onConflictDoNothing({
-      target: [
-        memberships.userId,
-        memberships.groupId,
-        // memberships['memberships_user_id_group_id'],
-      ],
-    })
-    .returning({
-      userId: memberships.userId,
-      groupId: memberships.groupId,
-      createdBy: memberships.createdBy,
-      createdAt: memberships.createdAt,
-    });
+//   const result = await db
+//     .insert(memberships)
+//     .values(newMemberships)
+//     .onConflictDoNothing({
+//       target: [
+//         memberships.userId,
+//         memberships.groupId,
+//         // memberships['memberships_user_id_group_id'],
+//       ],
+//     })
+//     .returning({
+//       userId: memberships.userId,
+//       groupId: memberships.groupId,
+//       createdBy: memberships.createdBy,
+//       createdAt: memberships.createdAt,
+//     });
 
-  return nullIfEmptyArrOrStr(result);
-};
+//   return nullIfEmptyArrOrStr(result);
+// };
 
 export const insertEmployments = async ({
   userIds,

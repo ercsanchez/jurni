@@ -94,7 +94,8 @@ export const updateUserPasswordAndInsertCredentialsAccount = async (
   return result ?? null;
 };
 
-export const txDeleteJoinReqsInsertMemberships = async (data: {
+// INSERT MEMBERSHIPS FOR APPROVED JOIN REQUESTS (DELETED)
+export const txDelJoinReqsThenInsMemberships = async (data: {
   userIds: Array<SelectUser['id']>;
   groupId: InsertJoinRequest['groupId'];
   // confirmed: InsertJoinRequest['confirmed'];
@@ -112,16 +113,16 @@ export const txDeleteJoinReqsInsertMemberships = async (data: {
 
     const { userIds, groupId, createdBy } = data;
 
-    const deletedJoinReqs = await tx
+    const deletedJoinRequests = await tx
       .delete(joinRequests)
       .where(
         sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
       )
       .returning();
 
-    if (!nullIfEmptyArrOrStr(deletedJoinReqs)) tx.rollback();
+    if (!nullIfEmptyArrOrStr(deletedJoinRequests)) tx.rollback();
 
-    const newMemberships = deletedJoinReqs.map((joinReq) => {
+    const newMemberships = deletedJoinRequests.map((joinReq) => {
       const { userId, groupId, invitedBy } = joinReq;
       return { userId, groupId, invitedBy, createdBy };
     });
@@ -149,7 +150,47 @@ export const txDeleteJoinReqsInsertMemberships = async (data: {
 
     if (!nullIfEmptyArrOrStr(insertedMemberships)) tx.rollback();
 
-    return insertedMemberships;
+    return { deletedJoinRequests, insertedMemberships };
+  });
+
+  // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
+  return nullIfEmptyArrOrStr(result);
+};
+
+//
+export const txInsMembershipsAndDelJoinReqsIfExists = async (data: {
+  userIds: Array<InsertMembership['userId']>;
+  groupId: InsertMembership['groupId'];
+  createdBy: InsertMembership['createdBy'];
+  invitedBy?: InsertMembership['invitedBy'];
+}) => {
+  const result = await db.transaction(async (tx) => {
+    const { userIds, groupId, ...rest } = data;
+
+    const newMemberships = userIds.map((id) => {
+      return { userId: id, groupId, ...rest };
+    });
+
+    const insertedMemberships = await tx
+      .insert(memberships)
+      .values(newMemberships)
+      .onConflictDoNothing({
+        target: [memberships.userId, memberships.groupId],
+      })
+      .returning();
+
+    if (!nullIfEmptyArrOrStr(insertedMemberships)) tx.rollback();
+
+    const deletedJoinRequests = await tx
+      .delete(joinRequests)
+      .where(
+        sql`${joinRequests.userId} IN ${userIds} AND ${eq(joinRequests.groupId, groupId)}`,
+      )
+      .returning();
+
+    // transaction also fails if any of the queries above fail (even w/o explicityly running tx.rollback(), after no result from a query)
+
+    return { insertedMemberships, deletedJoinRequests };
   });
 
   // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
