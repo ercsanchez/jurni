@@ -73,7 +73,8 @@ for (const key in httpResConfig) {
 
 function httpResByStatus({
   status,
-  statusText = '',
+  // statusText = '',
+  statusText,
   message,
   data,
   headers,
@@ -93,7 +94,7 @@ function httpResByStatus({
     .map((i) => i[0]);
 
   let statusTextVal;
-  if (statusText.length > 0) {
+  if (statusText && statusText.length > 0) {
     statusTextVal = statusText;
   } else if (httpResConfigKey) {
     statusTextVal = httpResConfig[httpResConfigKey]['statusText'];
@@ -103,7 +104,9 @@ function httpResByStatus({
 
   return NextResponse.json(
     { data, message },
-    { status, statusText: statusTextVal, headers },
+    statusTextVal
+      ? { status, statusText: statusTextVal, headers }
+      : { status, headers },
   );
 }
 
