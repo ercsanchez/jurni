@@ -2,16 +2,20 @@ import {
   boolean,
   // foreignKey,
   integer,
+  pgEnum,
   pgTable,
   primaryKey,
   text,
+  time,
   timestamp,
+  unique,
   varchar,
 } from 'drizzle-orm/pg-core';
 
 import { relations } from 'drizzle-orm';
 
 import type { AdapterAccountType } from 'next-auth/adapters';
+import { DAY_NAMES } from '@/config/constants';
 
 export type ExtendedAdapterAccountType = AdapterAccountType | 'credentials';
 
@@ -147,6 +151,10 @@ export const groups = pgTable('group', {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   ownerId: text('owner_id').notNull(),
+
+  // TODO: should be ownedBy
+  // TODO: add createdBy & createdAt
+
   // .references(() => users.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 256 }).notNull().unique(),
 });
@@ -160,9 +168,57 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   joinRequests: many(joinRequests),
   memberships: many(memberships),
   employments: many(employments),
+  groupSessions: many(groupSessions),
 }));
 
-// groupSessions
+export const dayEnum = pgEnum(
+  'day',
+  DAY_NAMES,
+  // DAY_NAMES as unknown as readonly [string, ...string[]], // no need since DAY_NAMES already typecast to const
+);
+
+export const groupSessions = pgTable(
+  'groupSession',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    groupId: text('group_id').notNull(),
+    name: varchar('name', { length: 256 }).notNull(), // should not be unique so that multiple sessions w/ same name but different day/times
+    day: dayEnum().notNull(),
+    startAt: time('start_at', { withTimezone: true }).notNull(),
+    endAt: time('end_at', { withTimezone: true }).notNull(),
+    createdBy: text('created_by').notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+    lastEditedAt: timestamp('last_edited_at', { mode: 'date' }),
+
+    active: boolean().notNull().default(false), // to enable/disable members to check in
+
+    // remarks: inactive, cancelled/discontinued
+  },
+
+  // should not use composite primary key so that multiple sessions w/ same name but different day/times
+  // (table) => [primaryKey({ columns: [table.groupId, table.name] })],
+
+  // using a composite primary key to enforce a unique constraint on multiple fields, would mean you would have to pass the primary key fields, everytime when querying the relation
+  // better to define uniqueness separately
+  (table) => [
+    unique().on(
+      table.groupId,
+      table.name,
+      table.day,
+      table.startAt,
+      table.endAt,
+    ),
+  ],
+);
+
+export const groupSessionsRelations = relations(groupSessions, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupSessions.groupId],
+    references: [groups.id],
+  }),
+}));
 
 export const joinRequests = pgTable(
   'joinRequest',
@@ -278,6 +334,9 @@ export type SelectUserProfile = typeof userProfiles.$inferSelect;
 
 export type InsertGroup = typeof groups.$inferInsert;
 export type SelectGroup = typeof groups.$inferSelect;
+
+export type InsertGroupSession = typeof groupSessions.$inferInsert;
+export type SelectGroupSession = typeof groupSessions.$inferSelect;
 
 export type InsertJoinRequest = typeof joinRequests.$inferInsert;
 export type SelectJoinRequest = typeof joinRequests.$inferSelect;
