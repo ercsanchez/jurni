@@ -3,9 +3,11 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   groups,
+  groupSessions,
   joinRequests,
   users,
   type SelectGroup,
+  type SelectGroupSession,
   type SelectJoinRequest,
   type SelectUser,
 } from '@/db/schema';
@@ -74,4 +76,22 @@ export const updateJoinRequests = async (data: {
     .returning();
 
   return nullIfEmptyArrOrStr(result);
+};
+
+export const updateGroupSession = async (data: {
+  id: SelectGroupSession['id'];
+  name: SelectGroupSession['name'];
+  active: SelectGroupSession['active'];
+}) => {
+  const { id, ...rest } = data;
+
+  const lastEditedAt = new Date();
+
+  const [result] = await db
+    .update(groupSessions)
+    .set({ ...rest, lastEditedAt })
+    .where(eq(groupSessions.id, id))
+    .returning();
+
+  return result;
 };

@@ -1,3 +1,5 @@
+import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
+
 // returns original value if not an Array or string
 export function nullIfEmptyArrOrStr(arg: Array<unknown> | string | unknown) {
   if (typeof arg === 'string' || Array.isArray(arg)) {
@@ -52,3 +54,7 @@ export function nullIfEmptyObjOrStr(arg: unknown) {
 
 export const capitalizeFirstChar = (str: string) =>
   str.charAt(0).toUpperCase() + str.slice(1);
+
+// append timezone offset (+00:00) to time (00:00:00.000)
+export const appendTz = (str: string, tzOffset: string) =>
+  tzOffset ? `${str}+${tzOffset}` : `${str}+${DEFAULT_TIMEZONE_OFFSET}`;

@@ -4,11 +4,13 @@ import { db } from '@/db';
 import {
   accounts,
   groups,
+  // groupSessions,
   joinRequests,
   users,
   type ExtendedAdapterAccountType,
   type SelectAccount,
   type SelectGroup,
+  // type SelectGroupSession,
   type SelectJoinRequest,
   type SelectUser,
 } from '@/db/schema';
@@ -91,3 +93,13 @@ export const selJoinRequest = async (userId: SelectJoinRequest['userId']) => {
 
   return result;
 };
+
+// not yet used
+// export const selGroupSessionById = async (id: SelectGroupSession['id']) => {
+//   const [result] = await db
+//     .select()
+//     .from(groupSessions)
+//     .where(eq(groupSessions.id, id));
+
+//   return result;
+// };

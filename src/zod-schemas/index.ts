@@ -1,5 +1,7 @@
 import * as z from 'zod';
 
+import { DAY_NAMES } from '@/config/constants';
+
 export const RegisterSchema = z.object({
   email: z.string().email({ message: 'Email is required / Invalid email' }),
   password: z
@@ -79,25 +81,59 @@ export const AllSearchParamsSchema = z
   .partial()
   .strict({ message: 'Some invalid URL query params present.' });
 
+const zArrayStringIds = (tableName: string) =>
+  z
+    .array(
+      z.string().min(1, {
+        message: `Invalid ${tableName} Id. Empty string/(s) were passed.`,
+      }),
+    )
+    .nonempty({ message: `You haven't defined any ${tableName}s.` });
+
+export const UserIdsSchema = z.object({
+  userIds: zArrayStringIds('User'),
+});
+
+export const EvaluateJoinRequestsSchema = z.object({
+  userIds: zArrayStringIds('User'),
+  confirmed: z.nullable(z.boolean({ message: 'Request must be denied.' })),
+});
+
+export const InsertGroupSessionsSchema = z.object({
+  name: z.string().min(1, { message: 'Name is required.' }),
+  day: z.enum(DAY_NAMES, { message: 'Invalid day value.' }),
+  startAt: z.string().time(),
+  endAt: z.string().time(),
+  tzOffset: z.optional(
+    z.string().min(1, {
+      message:
+        'Timezone is optional but cannot be an empty string, when defined.',
+    }),
+  ),
+});
+
+// should only edit one session at a time
+export const UpdateGroupSessionSchema = z.object({
+  id: z.string().min(1, {
+    message: `Invalid Group Session Id. Empty string/(s) were passed.`,
+  }),
+  name: z.string().min(1, { message: 'Name is required.' }).optional(),
+  active: z.boolean().optional(),
+
+  // owner can only edit these if no checkins for the session
+  // day: z.enum(DAY_NAMES, { message: 'Invalid day value.' }),
+  // startAt: z.string().time(),
+  // endAt: z.string().time(),
+  // tzOffset: z.optional(
+  //   z.string().min(1, {
+  //     message:
+  //       'Timezone is optional but cannot be an empty string, when defined.',
+  //   }),
+  // ),
+});
+
 // use this for query params that have boolean values
 // const booleanSearchParamsValues = ['true', 'false'] as const;
 // z.enum(booleanSearchParamsValues, {
 //   message: `URL query param ("all") must be true or false.`,
 // }),
-
-const userIdsArray = z
-  .array(
-    z.string().min(1, {
-      message: 'Invalid User Id. Empty string was passed.',
-    }),
-  )
-  .nonempty({ message: "You haven't defined any Users." });
-
-export const UserIdsSchema = z.object({
-  userIds: userIdsArray,
-});
-
-export const EvaluateJoinRequestsSchema = z.object({
-  userIds: userIdsArray,
-  confirmed: z.nullable(z.boolean({ message: 'Request must be denied.' })),
-});

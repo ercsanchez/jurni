@@ -5,6 +5,7 @@ import {
   accounts,
   employments,
   groups,
+  groupSessions,
   joinRequests,
   memberships,
   users,
@@ -12,6 +13,7 @@ import {
   type SelectAccount,
   type SelectEmployment,
   type SelectGroup,
+  type SelectGroupSession,
   type SelectJoinRequest,
   type SelectMembership,
   type SelectUser,
@@ -173,17 +175,21 @@ export const qryGroupById = async ({
   whereEmployeeUserId,
   whereMemberUserId,
   whereJoinReqUserId,
+  whereGroupSessionId,
   withEmployees = false,
   withMembers = false,
   withJoinReqs = false,
+  withGroupSessions = false,
 }: {
   groupId: SelectGroup['id'];
   whereEmployeeUserId?: SelectEmployment['userId'];
   whereMemberUserId?: SelectMembership['userId'];
   whereJoinReqUserId?: SelectJoinRequest['userId'];
+  whereGroupSessionId?: SelectGroupSession['id'];
   withEmployees?: boolean;
   withMembers?: boolean;
   withJoinReqs?: boolean;
+  withGroupSessions?: boolean;
 }) => {
   try {
     // const withMemberships: { memberships: { with: { user: true } } } | object =
@@ -212,6 +218,12 @@ export const qryGroupById = async ({
           ? { where: eq(joinRequests.userId, whereJoinReqUserId!) }
           : withJoinReqs
             ? { with: { user: true } }
+            : {},
+
+        groupSessions: whereGroupSessionId
+          ? { where: eq(groupSessions.id, whereGroupSessionId!) }
+          : withGroupSessions
+            ? true
             : {},
 
         // ...(withJoinReqs && { joinRequests: { with: { user: true } } }),

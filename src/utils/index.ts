@@ -1,5 +1,6 @@
 import { type DbAccessFn } from './defs';
 import {
+  appendTz,
   capitalizeFirstChar,
   isEmptyObjOrStr,
   nullIfEmptyArrOrStr,
@@ -17,6 +18,7 @@ import { hashPassword, comparePassword } from './password';
 import { zodValidate, zodValidateSearchParams } from './zod-validate';
 
 export {
+  appendTz,
   capitalizeFirstChar,
   comparePassword,
   getEnvValue,

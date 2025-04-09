@@ -3,6 +3,7 @@ import {
   accounts,
   employments,
   groups,
+  groupSessions,
   joinRequests,
   // memberships,
   users,
@@ -10,6 +11,7 @@ import {
   type InsertAccount,
   type InsertEmployment,
   type InsertGroup,
+  type InsertGroupSession,
   type InsertJoinRequest,
   // type InsertMembership,
   type InsertUser,
@@ -145,6 +147,28 @@ export const insEmployments = async ({
       .returning();
 
     return nullIfEmptyArrOrStr(result);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const insGroupSession = async (newGroupSession: InsertGroupSession) => {
+  try {
+    const [result] = await db
+      .insert(groupSessions)
+      .values(newGroupSession)
+      .onConflictDoNothing({
+        target: [
+          groupSessions.groupId,
+          groupSessions.name,
+          groupSessions.day,
+          groupSessions.startAt,
+          groupSessions.endAt,
+        ],
+      })
+      .returning();
+
+    return result;
   } catch (error) {
     console.error(error);
   }
