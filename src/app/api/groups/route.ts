@@ -133,7 +133,7 @@ export const POST = async function POST(req: Request) {
       return httpRes.conflict({ message: 'Group Name already exists.' });
 
     const result = await insertGroup({
-      ownerId: sessionUser.id!,
+      ownedBy: sessionUser.id!,
       name,
       // ...(validation.data! as { name: string; } // also works | ts doesn't know the form of ...(someVar) so need to typecast
     });

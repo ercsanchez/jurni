@@ -45,7 +45,7 @@ export const PATCH = async function PATCH(
 
     const result = await updateGroup({
       id: groupId,
-      ownerId: sessionUser.id!,
+      ownedBy: sessionUser.id!,
       ...validation.data,
       // need this if zodValidate return value is typed
       // name: validation.data!.name,

@@ -39,7 +39,7 @@ export const POST = async function POST(
     }
 
     // current user is not the group owner
-    if (sessionUser.id !== existingGroup.ownerId) {
+    if (sessionUser.id !== existingGroup.ownedBy) {
       const [currentUserEmployee] = existingGroup.employments;
       if (!currentUserEmployee) {
         return httpRes.forbidden({

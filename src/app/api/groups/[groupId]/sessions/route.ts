@@ -41,7 +41,7 @@ export const POST = async function POST(
       return httpRes.notFound({ message: 'Group does not exist.' });
     }
 
-    if (existingGroup.ownerId !== sessionUser.id) {
+    if (existingGroup.ownedBy !== sessionUser.id) {
       return httpRes.forbidden({
         message: 'Only the Group Owner can add Session/(s).',
       });
@@ -115,7 +115,7 @@ export const PATCH = async function PATCH(
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
 
-    if (existingGroup.ownerId !== sessionUser.id)
+    if (existingGroup.ownedBy !== sessionUser.id)
       return httpRes.forbidden({
         message: 'Only the Group Owner can edit a Session.',
       });

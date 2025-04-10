@@ -38,18 +38,18 @@ export const updateUserPassword = async (
 
 export const updateGroup = async ({
   id,
-  ownerId,
+  ownedBy,
   name,
 }: {
   id: SelectGroup['id'];
-  ownerId: SelectGroup['ownerId'];
+  ownedBy: SelectGroup['ownedBy'];
   name: SelectGroup['name'];
 }) => {
   const [result] = await db
     .update(groups)
     .set({ name: name })
-    .where(and(eq(groups.ownerId, ownerId), eq(groups.id, id)))
-    .returning({ id: groups.id, name: groups.name, ownerId: groups.ownerId });
+    .where(and(eq(groups.ownedBy, ownedBy), eq(groups.id, id)))
+    .returning({ id: groups.id, name: groups.name, ownedBy: groups.ownedBy });
 
   return result ?? null;
 };

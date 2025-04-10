@@ -76,11 +76,11 @@ export const queryFindUserByIdWithOwnedGroups = async (
   return result;
 };
 
-export const queryFindGroupsByOwnerIdWithOwner = async (
-  ownerId: SelectGroup['ownerId'],
+export const queryFindGroupsByownedByWithOwner = async (
+  ownedBy: SelectGroup['ownedBy'],
 ) => {
   const result = await db.query.groups.findMany({
-    where: eq(groups.ownerId, ownerId),
+    where: eq(groups.ownedBy, ownedBy),
     with: {
       owner: true,
     },
@@ -147,11 +147,11 @@ export const queryFindGroupByIdWithOwner = async ({
   return result;
 };
 
-export const queryFindGroupsByOwnerId = async (
-  ownerId: SelectGroup['ownerId'],
+export const queryFindGroupsByownedBy = async (
+  ownedBy: SelectGroup['ownedBy'],
 ) => {
   const result = await db.query.groups.findMany({
-    where: eq(groups.ownerId, ownerId),
+    where: eq(groups.ownedBy, ownedBy),
   });
 
   // findMany returns array w/c is empty if none found

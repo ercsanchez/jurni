@@ -34,7 +34,7 @@ export async function PATCH(
       return httpRes.notFound({ message: 'Group does not exist.' });
 
     // current user is not the group owner
-    if (sessionUser.id !== existingGroup.ownerId) {
+    if (sessionUser.id !== existingGroup.ownedBy) {
       const [currentUserEmployee] = existingGroup.employments;
       if (!currentUserEmployee) {
         return httpRes.forbidden({
@@ -132,7 +132,7 @@ export async function GET(
       return httpRes.notFound({ message: 'Group does not exist.' });
 
     // current user is not the group owner
-    if (sessionUser.id !== existingGroup.ownerId) {
+    if (sessionUser.id !== existingGroup.ownedBy) {
       const [currentUserEmployee] = existingGroup.employments;
       if (!currentUserEmployee) {
         return httpRes.forbidden({

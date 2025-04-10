@@ -38,7 +38,7 @@ export const POST = async function POST(
       return httpRes.notFound({ message: 'Group does not exist.' });
     }
 
-    if (existingGroup.ownerId !== sessionUser.id) {
+    if (existingGroup.ownedBy !== sessionUser.id) {
       return httpRes.forbidden({
         message: 'Only the group owner can add employees.',
       });
@@ -117,7 +117,7 @@ export const GET = async function GET(
       return httpRes.notFound({ message: 'Group does not exist.' });
 
     // current user is not the group owner
-    if (sessionUser.id !== existingGroup.ownerId) {
+    if (sessionUser.id !== existingGroup.ownedBy) {
       // check if current user is an employee
       const [currentUserEmployee] = existingGroup.employments;
       if (!currentUserEmployee) {
@@ -163,7 +163,7 @@ export const GET = async function GET(
 //     if (!existingGroup)
 //       return httpRes.notFound({ message: 'Group does not exist.' });
 
-//     if (existingGroup.ownerId !== sessionUser.id) {
+//     if (existingGroup.ownedBy !== sessionUser.id) {
 //       return httpRes.forbidden({
 //         message: 'Only the group owner can delete employees.',
 //       });
