@@ -92,6 +92,14 @@ export const accounts = pgTable(
 
     // this change may affect next-auth in some other way so check this!!!
     primaryKey({ columns: [account.userId, account.provider] }),
+
+    // foreignKey({
+    //   name: 'user_fk',
+    //   columns: [account.userId],
+    //   foreignColumns: [users.id],
+    // })
+    //   .onDelete('cascade')
+    //   .onUpdate('cascade'),
   ],
 
   // this is the old way | cannot delete account in the db | only deleted when deleting the user | drizzle-kit studio error please add a primary key column to your table to update or delete rows
@@ -150,7 +158,7 @@ export const groups = pgTable('group', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  ownerId: text('owner_id').notNull(),
+  ownedBy: text('owned_by').notNull(),
 
   // TODO: should be ownedBy
   // TODO: add createdBy & createdAt
@@ -161,7 +169,7 @@ export const groups = pgTable('group', {
 
 export const groupsRelations = relations(groups, ({ one, many }) => ({
   owner: one(users, {
-    fields: [groups.ownerId],
+    fields: [groups.ownedBy],
     references: [users.id],
     relationName: 'ownership',
   }),
@@ -178,7 +186,7 @@ export const dayEnum = pgEnum(
 );
 
 export const groupSessions = pgTable(
-  'groupSession',
+  'group_session',
   {
     id: text('id')
       .primaryKey()
@@ -221,7 +229,7 @@ export const groupSessionsRelations = relations(groupSessions, ({ one }) => ({
 }));
 
 export const joinRequests = pgTable(
-  'joinRequest',
+  'join_request',
   {
     userId: text('user_id').notNull(),
     groupId: text('group_id').notNull(),
