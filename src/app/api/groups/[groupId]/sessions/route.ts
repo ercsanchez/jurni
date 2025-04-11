@@ -11,7 +11,7 @@ import {
   zodValidate,
 } from '@/utils';
 import {
-  InsertGroupSessionsSchema,
+  InsertGroupSessionSchema,
   UpdateGroupSessionSchema,
 } from '@/zod-schemas';
 
@@ -49,7 +49,7 @@ export const POST = async function POST(
 
     const data = await req.json();
 
-    const validation = zodValidate(InsertGroupSessionsSchema, data);
+    const validation = zodValidate(InsertGroupSessionSchema, data);
 
     if (!validation?.success) {
       return httpRes.badRequest({ message: validation?.message });

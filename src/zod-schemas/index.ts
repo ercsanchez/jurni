@@ -99,7 +99,7 @@ export const EvaluateJoinRequestsSchema = z.object({
   confirmed: z.nullable(z.boolean({ message: 'Request must be denied.' })),
 });
 
-export const InsertGroupSessionsSchema = z.object({
+export const InsertGroupSessionSchema = z.object({
   name: z.string().min(1, { message: 'Name is required.' }),
   day: z.enum(DAY_NAMES, { message: 'Invalid day value.' }),
   startAt: z.string().time(),
