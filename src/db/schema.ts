@@ -1,6 +1,10 @@
+import { relations } from 'drizzle-orm';
 import {
+  bigserial,
   boolean,
+  date,
   // foreignKey,
+  // index,
   integer,
   pgEnum,
   pgTable,
@@ -11,11 +15,9 @@ import {
   unique,
   varchar,
 } from 'drizzle-orm/pg-core';
-
-import { relations } from 'drizzle-orm';
-
 import type { AdapterAccountType } from 'next-auth/adapters';
-import { DAY_NAMES } from '@/config/constants';
+
+import { DAY_NAMES, DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 
 export type ExtendedAdapterAccountType = AdapterAccountType | 'credentials';
 
@@ -159,12 +161,14 @@ export const groups = pgTable('group', {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   ownedBy: text('owned_by').notNull(),
-
-  // TODO: should be ownedBy
-  // TODO: add createdBy & createdAt
-
   // .references(() => users.id, { onDelete: 'cascade' }),
+
   name: varchar('name', { length: 256 }).notNull().unique(),
+  defaultTimezoneOffset: varchar('default_timezone_offset', { length: 6 })
+    .notNull()
+    .default(DEFAULT_TIMEZONE_OFFSET),
+
+  // TODO: add createdBy & createdAt
 });
 
 export const groupsRelations = relations(groups, ({ one, many }) => ({
@@ -177,6 +181,7 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   memberships: many(memberships),
   employments: many(employments),
   groupSessions: many(groupSessions),
+  memberCheckins: many(memberCheckins),
 }));
 
 export const dayEnum = pgEnum(
@@ -196,6 +201,9 @@ export const groupSessions = pgTable(
     day: dayEnum().notNull(),
     startAt: time('start_at', { withTimezone: true }).notNull(),
     endAt: time('end_at', { withTimezone: true }).notNull(),
+    timezoneOffset: varchar('timezone_offset', { length: 6 })
+      .notNull()
+      .default(DEFAULT_TIMEZONE_OFFSET),
     createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
     lastEditedAt: timestamp('last_edited_at', { mode: 'date' }),
@@ -209,7 +217,7 @@ export const groupSessions = pgTable(
   // (table) => [primaryKey({ columns: [table.groupId, table.name] })],
 
   // using a composite primary key to enforce a unique constraint on multiple fields, would mean you would have to pass the primary key fields, everytime when querying the relation
-  // better to define uniqueness separately
+  // better to define a unique constraint separately
   (table) => [
     unique().on(
       table.groupId,
@@ -217,6 +225,7 @@ export const groupSessions = pgTable(
       table.day,
       table.startAt,
       table.endAt,
+      table.timezoneOffset,
     ),
   ],
 );
@@ -297,12 +306,106 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
     fields: [memberships.userId],
     references: [users.id],
   }),
-
+  // checkins: many(memberCheckins),
   // joinRequest: one(joinRequests, {
   //   fields: [memberships.userId, memberships.groupId],
   //   references: [joinRequests.userId, joinRequests.groupId],
   // }),
 }));
+
+// req'd inputs: groupId, userId, sessionId, date, createdBy, confirmedBy?, confirmedAt?
+export const memberCheckins = pgTable(
+  'member_checkin',
+  {
+    id: bigserial({ mode: 'bigint' }).primaryKey(),
+
+    // membership relation
+    groupId: text('group_id').notNull(),
+    userId: text('user_id').notNull(),
+
+    // session relation
+    sessionId: text('session_id').notNull(),
+
+    // actual date using the related session's timezone offset | needed to ensure only unique checkin per member per session per day
+    date: date('date', { mode: 'string' }).notNull(), // needs date iso string as the input value | if using mode: 'date', => "TypeError: value.toISOString is not a function" if you don't pass a js date object as the value
+
+    createdAt: timestamp('created_at', {
+      mode: 'date',
+      // withTimezone: true, // no need for timezone, since js dates are always generated and saved in UTC and its difficult to convert it with a tz offset
+      precision: 0,
+    })
+      .notNull()
+      .defaultNow(), // TODO: generate the date from the drizzle query func so that createdDate and createdAt uses the same date obj?
+
+    createdBy: text('created_by').notNull(),
+
+    confirmed: boolean(),
+    confirmedBy: text('confirmed_by'),
+    confirmedAt: timestamp('confirmed_at', { mode: 'date', precision: 0 }),
+
+    // TODO: add fields lastEditedBy
+  },
+  (table) => [
+    // primarily used to ensure member can only check in once for any session per day | member can still check in to different sessions in a day
+    // no need to include groupId, since sessionId is unique
+    // primaryKey({
+    //   columns: [table.date, table.sessionId, table.userId],
+    // }),
+
+    unique().on(table.sessionId, table.userId, table.date).nullsNotDistinct(),
+
+    // need this for queries filering by groupId, then session, and period (date)
+    // filtering by group and period will always occur (since we don't want to query all checkins from the beg)
+    // pk is insufficient for queries where group
+
+    // TODO: query is faster with the
+    // catch all for
+    // index('member_checkin_group_id_session_id_user_id_date_idx').on(
+    //   table.groupId,
+    //   table.sessionId,
+    //   table.userId,
+    //   table.date,
+    // ),
+
+    // query by group and/or session (date will almost always be part of filter)
+    // index('member_checkin_group_id_session_id_date_idx').on(
+    //   table.groupId,
+    //   table.sessionId,
+    //   table.date,
+    // ),
+
+    // query by group and/or user (date will almost always be part of filter)
+    // index('member_checkin_group_id_user_id_date_idx').on(
+    //   table.groupId,
+    //   table.userId,
+    //   table.date,
+    // ),
+  ],
+);
+
+export const memberCheckinsRelations = relations(memberCheckins, ({ one }) => ({
+  group: one(groups, {
+    fields: [memberCheckins.groupId],
+    references: [groups.id],
+  }),
+
+  // TODO: do i need these? only useful if we use query memberCheckins with relation
+  // user: one(users, {
+  //   fields: [memberCheckins.userId],
+  //   references: [users.id],
+  // }),
+  // groupSession: one(groupSessions, {
+  //   fields: [memberCheckins.sessionId],
+  //   references: [groupSessions.id],
+  // }),
+  // member: one(memberships, {
+  //   fields: [memberCheckins.groupId, memberCheckins.userId],
+  //   references: [memberships.groupId, memberships.userId],
+  // }),
+}));
+
+// employment status: active, inactive, banned, resigned, terminated
+// remarks: terminated, resigned, on leave, etc.
 
 export const employments = pgTable(
   'employment',
@@ -351,6 +454,9 @@ export type SelectJoinRequest = typeof joinRequests.$inferSelect;
 
 export type InsertMembership = typeof memberships.$inferInsert;
 export type SelectMembership = typeof memberships.$inferSelect;
+
+export type InsertMemberCheckin = typeof memberCheckins.$inferInsert;
+export type SelectMemberCheckin = typeof memberCheckins.$inferSelect;
 
 export type InsertEmployment = typeof employments.$inferInsert;
 export type SelectEmployment = typeof employments.$inferSelect;
