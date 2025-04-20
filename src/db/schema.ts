@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
 import {
+  bigint,
   bigserial,
   boolean,
   date,
@@ -15,6 +16,7 @@ import {
   unique,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { nanoid } from 'nanoid';
 import type { AdapterAccountType } from 'next-auth/adapters';
 
 import {
@@ -26,9 +28,10 @@ import {
 export type ExtendedAdapterAccountType = AdapterAccountType | 'credentials';
 
 export const users = pgTable('user', {
-  id: text('id')
+  // id: bigserial('id', { mode: 'number' }) // drizzle adapter error because expects a vrchar/text/uuid type
+  id: varchar('id', { length: 7 })
     .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
+    .$defaultFn(() => nanoid(7)),
   name: varchar('name', { length: 64 }),
   email: varchar('email', { length: 128 }).unique().notNull(),
   emailVerified: timestamp('emailVerified', { mode: 'date' }),
@@ -76,9 +79,9 @@ export const accounts = pgTable(
     // id: text('id')
     //   .primaryKey()
     //   .$defaultFn(() => crypto.randomUUID()),
-    userId: text('userId')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    userId: varchar('userId', { length: 7 }) // do not use 'user_id' as the name as it will yield errors with the next-auth drizzle adapter
+      .notNull(),
+    // .references(() => users.id, { onDelete: 'cascade' }),
     type: text('type').$type<ExtendedAdapterAccountType>().notNull(),
     provider: text('provider').notNull(),
     providerAccountId: text('providerAccountId').notNull(),
@@ -131,9 +134,8 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 export const userProfiles = pgTable(
   'user_profile',
   {
-    userId: text('userId')
-      .primaryKey()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    userId: varchar('user_id', { length: 7 }).primaryKey(),
+    // .references(() => users.id, { onDelete: 'cascade' }),
     firstName: varchar('first_name', { length: 64 }).notNull(),
     middleName: varchar('middle_name', { length: 64 }).notNull(),
     lastName: varchar('last_name', { length: 64 }).notNull(),
@@ -159,10 +161,9 @@ export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
 }));
 
 export const groups = pgTable('group', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  ownedBy: text('owned_by').notNull(),
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  // slug:
+  ownedBy: varchar('owned_by', { length: 7 }).notNull(),
   // .references(() => users.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 256 }).notNull().unique(),
   defaultTimezoneOffset: varchar('default_timezone_offset', { length: 6 })
@@ -195,10 +196,8 @@ export const dayEnum = pgEnum(
 export const groupSessions = pgTable(
   'group_session',
   {
-    id: text('id')
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    groupId: text('group_id').notNull(),
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    groupId: bigint('group_id', { mode: 'number' }).notNull(),
     name: varchar('name', { length: 256 }).notNull(), // should not be unique so that multiple sessions w/ same name but different day/times
     day: dayEnum().notNull(),
 
@@ -210,7 +209,7 @@ export const groupSessions = pgTable(
       .notNull()
       .default(DEFAULT_TIMEZONE_OFFSET),
 
-    createdBy: text('created_by').notNull(),
+    createdBy: varchar('created_by', { length: 7 }).notNull(),
     createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
       .notNull()
       .defaultNow(),
@@ -247,14 +246,14 @@ export const groupSessionsRelations = relations(groupSessions, ({ one }) => ({
 export const joinRequests = pgTable(
   'join_request',
   {
-    groupId: text('group_id').notNull(),
-    userId: text('user_id').notNull(),
-    invitedBy: text('invited_by'),
+    groupId: bigint('group_id', { mode: 'number' }).notNull(),
+    userId: varchar('user_id', { length: 7 }).notNull(),
+    invitedBy: varchar('invited_by', { length: 7 }),
     confirmed: boolean(),
-    evaluatedBy: text('evaluated_by'),
+    evaluatedBy: varchar('evaluated_by', { length: 7 }),
     evaluatedAt: timestamp('evaluated_at', { mode: 'date', precision: 0 }),
 
-    // createdBy: text('created_by').notNull(), // only user can create a join request
+    // createdBy: varchar('created_by', { length: 7 }).notNull(), // only user can create a join request
     createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
       .notNull()
       .defaultNow(),
@@ -285,17 +284,17 @@ export const joinRequestsRelations = relations(joinRequests, ({ one }) => ({
 export const memberships = pgTable(
   'membership',
   {
-    groupId: text('group_id').notNull(),
-    userId: text('user_id').notNull(),
-    invitedBy: text('invited_by'),
-    createdBy: text('created_by').notNull(), // should be the same value as joinRequests.evaluatedBy
+    groupId: bigint('group_id', { mode: 'number' }).notNull(),
+    userId: varchar('user_id', { length: 7 }).notNull(),
+    invitedBy: varchar('invited_by', { length: 7 }),
+    createdBy: varchar('created_by', { length: 7 }).notNull(), // should be the same value as joinRequests.evaluatedBy
     createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
       .notNull()
       .defaultNow(),
 
     // dont use this | better to have table for status changes
     // lastEditedAt: timestamp('last_edited_at', { mode: 'date', precision: 0 }),
-    // lastEditedBy: text('last_edited_by'),
+    // lastEditedBy: varchar('last_edited_by', { length: 7 }),
   },
   (table) => [primaryKey({ columns: [table.groupId, table.userId] })],
 );
@@ -328,14 +327,14 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
 export const memberCheckins = pgTable(
   'member_checkin',
   {
-    id: bigserial({ mode: 'bigint' }).primaryKey(),
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
 
     // membership relation
-    groupId: text('group_id').notNull(),
-    userId: text('user_id').notNull(),
+    groupId: bigint('group_id', { mode: 'number' }).notNull(),
+    userId: varchar('user_id', { length: 7 }).notNull(),
 
     // session relation
-    sessionId: text('session_id').notNull(),
+    sessionId: bigint('session_id', { mode: 'number' }).notNull(),
 
     // actual date using the related session's timezone offset | needed to ensure only unique checkin per member per session per day
     date: date('date', { mode: 'string' }).notNull(), // needs date iso string as the input value | if using mode: 'date', => "TypeError: value.toISOString is not a function" if you don't pass a js date object as the value
@@ -348,10 +347,10 @@ export const memberCheckins = pgTable(
       .notNull()
       .defaultNow(), // TODO: generate the date from the drizzle query func so that createdDate and createdAt uses the same date obj?
 
-    createdBy: text('created_by').notNull(),
+    createdBy: varchar('created_by', { length: 7 }).notNull(),
 
     confirmed: boolean(),
-    confirmedBy: text('confirmed_by'),
+    confirmedBy: varchar('confirmed_by', { length: 7 }),
     confirmedAt: timestamp('confirmed_at', { mode: 'date', precision: 0 }),
 
     // TODO: add fields lastEditedBy
@@ -427,10 +426,10 @@ export const employeeRoleEnum = pgEnum(
 export const employments = pgTable(
   'employment',
   {
-    groupId: text('group_id').notNull(),
-    userId: text('user_id').notNull(),
+    groupId: bigint('group_id', { mode: 'number' }).notNull(),
+    userId: varchar('user_id', { length: 7 }).notNull(),
     role: employeeRoleEnum().notNull().default('employee'),
-    createdBy: text('created_by').notNull(),
+    createdBy: varchar('created_by', { length: 7 }).notNull(),
     createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
       .notNull()
       .defaultNow(),
