@@ -157,8 +157,12 @@ export const insEmployments = async ({
   }
 };
 
-export const insGroupSession = async (newGroupSession: InsertGroupSession) => {
+export const insGroupSession = async (data: InsertGroupSession) => {
   try {
+    const timezoneOffset = data.timezoneOffset ?? DEFAULT_TIMEZONE_OFFSET;
+
+    const newGroupSession = { ...data, timezoneOffset };
+
     const [result] = await db
       .insert(groupSessions)
       .values(newGroupSession)
@@ -169,6 +173,7 @@ export const insGroupSession = async (newGroupSession: InsertGroupSession) => {
           groupSessions.day,
           groupSessions.startAt,
           groupSessions.endAt,
+          groupSessions.timezoneOffset,
         ],
       })
       .returning();

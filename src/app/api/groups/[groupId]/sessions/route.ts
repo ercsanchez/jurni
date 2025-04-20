@@ -1,10 +1,10 @@
-import { currentAuthUser } from '@/lib/nextauth';
+import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 import { insGroupSession } from '@/db-access/insert';
 import { qryGroupById } from '@/db-access/query';
 import { selectGroupById, selectUserById } from '@/db-access/select';
 import { updateGroupSession } from '@/db-access/update';
+import { currentAuthUser } from '@/lib/nextauth';
 import {
-  appendTz,
   httpRes,
   httpResByStatus,
   serverResponseError,
@@ -55,21 +55,27 @@ export const POST = async function POST(
       return httpRes.badRequest({ message: validation?.message });
     }
 
-    const { name, day, startAt, endAt, tzOffset } = data;
+    const { name, day, startAt, endAt, timezoneOffset } = data;
+    const tzOffset = timezoneOffset
+      ? timezoneOffset
+      : existingGroup.defaultTimezoneOffset
+        ? existingGroup.defaultTimezoneOffset
+        : DEFAULT_TIMEZONE_OFFSET;
 
     const result = await insGroupSession({
       groupId,
       name,
       day,
-      startAt: appendTz(startAt, tzOffset),
-      endAt: appendTz(endAt, tzOffset),
+      startAt,
+      endAt,
       createdBy: sessionUser.id,
+      timezoneOffset: tzOffset,
     });
 
     // no result if Session/(s) already exists
     if (!result)
       return httpRes.badRequest({
-        message: 'Session/(s) already exist.',
+        message: 'Session/(s) not created. Already exist / Invalid inputs.',
       });
 
     return httpRes.ok({
