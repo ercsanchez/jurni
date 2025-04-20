@@ -1,3 +1,4 @@
+import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 import { db } from '@/db';
 import {
   accounts,
@@ -5,6 +6,7 @@ import {
   groups,
   groupSessions,
   joinRequests,
+  memberCheckins,
   // memberships,
   users,
   userProfiles,
@@ -13,11 +15,16 @@ import {
   type InsertGroup,
   type InsertGroupSession,
   type InsertJoinRequest,
+  type InsertMemberCheckin,
   // type InsertMembership,
   type InsertUser,
   type InsertUserProfile,
 } from '@/db/schema';
-import { nullIfEmptyArrOrStr } from '@/utils';
+import {
+  getShiftedDateISOStringGivenTz,
+  nullIfEmptyArrOrStr,
+  queryDataWithBigintToStr,
+} from '@/utils';
 
 export const insertUser = async (newUser: InsertUser) => {
   const [result] = await db
@@ -66,8 +73,6 @@ export const insertGroup = async (newGroup: InsertGroup) => {
   const [result] = await db.insert(groups).values(newGroup).returning({
     name: groups.name,
   });
-
-  console.log('insertGroup', result);
 
   return result ?? null;
 };
@@ -169,6 +174,74 @@ export const insGroupSession = async (newGroupSession: InsertGroupSession) => {
       .returning();
 
     return result;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const insMemberCheckins = async ({
+  groupId,
+  userIds,
+  sessionId,
+  createdBy,
+  confirmed,
+  confirmedBy,
+  timezoneOffset = DEFAULT_TIMEZONE_OFFSET,
+  createdAt,
+}: {
+  groupId: InsertMemberCheckin['groupId'];
+  userIds: Array<InsertMemberCheckin['userId']>;
+  sessionId: InsertMemberCheckin['sessionId'];
+  createdBy: InsertMemberCheckin['createdBy'];
+  confirmed?: InsertMemberCheckin['confirmed'];
+  confirmedBy?: InsertMemberCheckin['confirmedBy'];
+  timezoneOffset?: InsertGroupSession['timezoneOffset'];
+  createdAt?: string; // date iso string | don't use InsertMemberCheckin['createdAt'] since we expect a string
+}) => {
+  try {
+    const createdAtUTCDatetime = createdAt ? new Date(createdAt) : new Date();
+
+    const createdAtLocalDateAdjusted4Tz = getShiftedDateISOStringGivenTz(
+      timezoneOffset,
+      createdAtUTCDatetime,
+    );
+
+    const confirmationData = Object.is(confirmed, null)
+      ? { confirmed: null, confirmedBy: null, confirmedAt: null }
+      : typeof confirmed === 'boolean'
+        ? {
+            confirmed,
+            confirmedBy,
+            confirmedAt: new Date(),
+          }
+        : {}; // confirmed is undefined
+
+    const newMemberCheckins = userIds.map((userId) => ({
+      groupId,
+      userId,
+      sessionId,
+      date: createdAtLocalDateAdjusted4Tz,
+      createdAt: createdAtUTCDatetime,
+      createdBy,
+      ...confirmationData,
+    }));
+
+    // TypeError: value.toISOString is not a function | means that drizzle field mismatch to the input (e.g. field date type, with mode:'date' and you're passing a date ISO string instead of a date obj coz a string does not have a method of .toISOString
+    // Fix: either pass a js date object to drizzle table field date with mode:'date' or pass a date ISO string to date with mode: 'string'
+    const queryResult = await db
+      .insert(memberCheckins)
+      .values(newMemberCheckins)
+      .onConflictDoNothing({
+        target: [
+          memberCheckins.date,
+          memberCheckins.sessionId,
+          memberCheckins.userId,
+        ],
+      })
+      .returning();
+    const result = queryDataWithBigintToStr(queryResult, 'id');
+
+    return nullIfEmptyArrOrStr(result);
   } catch (error) {
     console.error(error);
   }

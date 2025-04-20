@@ -5,13 +5,15 @@ import {
   groups,
   groupSessions,
   joinRequests,
+  memberCheckins,
   users,
   type SelectGroup,
   type SelectGroupSession,
   type SelectJoinRequest,
+  type SelectMemberCheckin,
   type SelectUser,
 } from '@/db/schema';
-import { nullIfEmptyArrOrStr } from '@/utils';
+import { nullIfEmptyArrOrStr, queryDataWithBigintToStr } from '@/utils';
 
 export const updateUserEmailVerified = async (userId: SelectUser['id']) => {
   const [result] = await db
@@ -94,4 +96,51 @@ export const updateGroupSession = async (data: {
     .returning();
 
   return result;
+};
+
+export const upMemberCheckins = async ({
+  ids,
+  confirmed,
+  confirmedBy,
+}: {
+  ids: Array<SelectMemberCheckin['id']>;
+  confirmed?: SelectMemberCheckin['confirmed'];
+  confirmedBy?: SelectMemberCheckin['confirmedBy'];
+  // groupId: SelectMemberCheckin['groupId'];
+  // sessionId: SelectMemberCheckin['sessionId']; // doesnt seem to be needed since we already use the member checkin id
+  // createdAt?: string;
+}) => {
+  const confirmationData = Object.is(confirmed, null)
+    ? { confirmed: null, confirmedBy: null, confirmedAt: null }
+    : typeof confirmed === 'boolean'
+      ? {
+          confirmed,
+          confirmedBy,
+          confirmedAt: new Date(),
+        }
+      : {}; // confirmed is undefined
+
+  // do not allow editing of createdAt data
+  // const tzOffset = timezoneOffset ?? DEFAULT_TIMEZONE_OFFSET;
+  // const createdAtDateObj = createdAt ? new Date(createdAt) : undefined;
+  // const createdLocalDateISOString = createdAtDateObj
+  //   ? getShiftedDateISOStringGivenTz(tzOffset, createdAtDateObj)
+  //   : undefined;
+  // const creationData = createdAt
+  //   ? { createdAt: createdAtDateObj, createdDate: createdLocalDateISOString }
+  //   : {};
+
+  const queryResult = await db
+    .update(memberCheckins)
+    // .set({ ...confirmationData, ...creationData, ...rest })
+    .set({ ...confirmationData })
+    .where(sql`${memberCheckins.id} IN ${ids}`)
+    .returning();
+
+  // memberCheckin id is a bigint so needs to be converted to string
+  const result = queryDataWithBigintToStr(queryResult, 'id');
+  // - or -
+  // const result = q.map((i) => ({ ...i, id: i.id.toString() }));
+
+  return nullIfEmptyArrOrStr(result);
 };
