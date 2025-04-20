@@ -21,7 +21,7 @@ export function zodValidate(zodSchema: z.Schema, data: object) {
     console.error(new Error(`Zod Validation Error: ${zodErrorMsg}`));
     return {
       success,
-      message: `Validation Error: ${zodErrorMsg}`,
+      message: `Zod Validation Error: ${zodErrorMsg}`,
     };
   }
 
@@ -55,17 +55,28 @@ export function zodValidateSearchParams(
   if (!successfulValidation) {
     // all of the SearchParamsSchemas failed zod validation
 
-    validationResults.map((i) =>
-      console.error(
-        new Error(`${capitalizeFirstChar(i.schemaKey!)}: ${i.message}`, {
-          cause: `Zod Validation Error: ${capitalizeFirstChar(i.schemaKey!)}`,
-        }),
-      ),
-    );
+    const failedSchemaNames = validationResults
+      .filter((i) => !i.success)
+      // .reduce((i) => i.schemaKey);
+      .reduce((acc, curr, idx, arr) => {
+        const endOfString = arr.length - 1 === idx ? '' : ', ';
+
+        return acc + capitalizeFirstChar(curr.schemaKey!) + endOfString;
+      }, '');
+
+    // validationResults.forEach((i) => {
+    //   if (!i.success) {
+    //     console.error(
+    //       new Error(`${i.message} (${capitalizeFirstChar(i.schemaKey!)})`, {
+    //         cause: `Zod Validation Error: ${capitalizeFirstChar(i.schemaKey!)}`,
+    //       }),
+    //     );
+    //   }
+    // });
 
     return {
       success: false,
-      message: 'Invalid URL query params.',
+      message: `Zod Validation Error: Invalid URL query params (${capitalizeFirstChar(failedSchemaNames!)}).`,
     };
   }
 

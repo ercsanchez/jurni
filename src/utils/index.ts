@@ -21,7 +21,6 @@ import {
   queryDataWithBigintToStr,
 } from './general';
 import getEnvValue from './get-env-value';
-import queryDbWithSearchParams from './query-db-with-search-params';
 import {
   httpRes,
   httpResConfig,
@@ -29,24 +28,10 @@ import {
   serverResponseError,
 } from './http-response';
 import { comparePassword, hashPassword, hashPasswordSync } from './password';
+import queryDbWithSearchParams from './query-db-with-search-params';
 import { zodValidate, zodValidateSearchParams } from './zod-validate';
 
 export {
-  capitalizeFirstChar,
-  comparePassword,
-  getEnvValue,
-  isEmptyObjOrStr,
-  httpRes,
-  httpResConfig,
-  httpResByStatus,
-  nullIfEmptyArrOrStr,
-  nullIfEmptyObjOrStr,
-  queryDbWithSearchParams,
-  serverResponseError,
-  zodValidateSearchParams,
-  zodValidate,
-  type DbAccessFn,
-
   // datetime -----------------------------
   createDateObj,
   // getDateValues,
@@ -59,12 +44,36 @@ export {
   // tzOffsetStrToMins,
   // tzOffsetStrToMs,
 
+  // defs -----------------------------
+  type DbAccessFn,
+
   // general -----------------------------
+  capitalizeFirstChar,
+  isEmptyObjOrStr,
+  nullIfEmptyArrOrStr,
+  nullIfEmptyObjOrStr,
   // padLeftWithOneZero,
   // padLeftWithTwoZeroes,
   queryDataWithBigintToStr,
 
+  // get-env-value
+  getEnvValue,
+
+  // http-response
+  httpRes,
+  httpResConfig,
+  httpResByStatus,
+  serverResponseError,
+
   // password -----------------------------
+  comparePassword,
   hashPassword,
   hashPasswordSync,
+
+  // query-db-with-search-params -----------------------------
+  queryDbWithSearchParams,
+
+  // zod-validate
+  zodValidateSearchParams,
+  zodValidate,
 };
