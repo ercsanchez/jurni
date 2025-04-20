@@ -17,7 +17,11 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from 'next-auth/adapters';
 
-import { DAY_NAMES, DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
+import {
+  DAY_NAMES,
+  DEFAULT_TIMEZONE_OFFSET,
+  EMPLOYEE_ROLES,
+} from '@/config/constants';
 
 export type ExtendedAdapterAccountType = AdapterAccountType | 'credentials';
 
@@ -92,8 +96,11 @@ export const accounts = pgTable(
 
     // account.providerAccountId may be null or empty '' so better to use user id, since user can only have one account per provider
 
-    // this change may affect next-auth in some other way so check this!!!
+    // TODO: this change may affect next-auth in some other way so check this!!!
     primaryKey({ columns: [account.userId, account.provider] }),
+
+    // prevent duplication of the same oauth acct (user signs in via oauth, changes user.email, then registers another user with the same oauth acct)
+    unique().on(account.provider, account.providerAccountId),
 
     // foreignKey({
     //   name: 'user_fk',
@@ -124,14 +131,9 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 export const userProfiles = pgTable(
   'user_profile',
   {
-    id: text('id')
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
     userId: text('userId')
-      .notNull()
-      .unique()
+      .primaryKey()
       .references(() => users.id, { onDelete: 'cascade' }),
-
     firstName: varchar('first_name', { length: 64 }).notNull(),
     middleName: varchar('middle_name', { length: 64 }).notNull(),
     lastName: varchar('last_name', { length: 64 }).notNull(),
@@ -162,12 +164,12 @@ export const groups = pgTable('group', {
     .$defaultFn(() => crypto.randomUUID()),
   ownedBy: text('owned_by').notNull(),
   // .references(() => users.id, { onDelete: 'cascade' }),
-
   name: varchar('name', { length: 256 }).notNull().unique(),
   defaultTimezoneOffset: varchar('default_timezone_offset', { length: 6 })
     .notNull()
     .default(DEFAULT_TIMEZONE_OFFSET),
 
+  // TODO: slug that will be used as a url path param
   // TODO: add createdBy & createdAt
 });
 
@@ -199,15 +201,20 @@ export const groupSessions = pgTable(
     groupId: text('group_id').notNull(),
     name: varchar('name', { length: 256 }).notNull(), // should not be unique so that multiple sessions w/ same name but different day/times
     day: dayEnum().notNull(),
-    startAt: time('start_at', { withTimezone: true }).notNull(),
-    endAt: time('end_at', { withTimezone: true }).notNull(),
+
+    // TODO: this might be an issue later since checkin time is in UTC
+    // store actual time in group's timezone (local time)
+    startAt: time('start_at', { precision: 0 }).notNull(), // no need for withTimezone: true, since already stored info separately
+    endAt: time('end_at', { precision: 0 }).notNull(),
     timezoneOffset: varchar('timezone_offset', { length: 6 })
       .notNull()
       .default(DEFAULT_TIMEZONE_OFFSET),
-    createdBy: text('created_by').notNull(),
-    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-    lastEditedAt: timestamp('last_edited_at', { mode: 'date' }),
 
+    createdBy: text('created_by').notNull(),
+    createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
+      .notNull()
+      .defaultNow(),
+    lastEditedAt: timestamp('last_edited_at', { mode: 'date', precision: 0 }),
     active: boolean().notNull().default(false), // to enable/disable members to check in
 
     // remarks: inactive, cancelled/discontinued
@@ -217,7 +224,7 @@ export const groupSessions = pgTable(
   // (table) => [primaryKey({ columns: [table.groupId, table.name] })],
 
   // using a composite primary key to enforce a unique constraint on multiple fields, would mean you would have to pass the primary key fields, everytime when querying the relation
-  // better to define a unique constraint separately
+  // better to define the unique constraint separately
   (table) => [
     unique().on(
       table.groupId,
@@ -240,17 +247,19 @@ export const groupSessionsRelations = relations(groupSessions, ({ one }) => ({
 export const joinRequests = pgTable(
   'join_request',
   {
-    userId: text('user_id').notNull(),
     groupId: text('group_id').notNull(),
+    userId: text('user_id').notNull(),
     invitedBy: text('invited_by'),
     confirmed: boolean(),
     evaluatedBy: text('evaluated_by'),
-    evaluatedAt: timestamp('evaluated_at', { mode: 'date' }),
+    evaluatedAt: timestamp('evaluated_at', { mode: 'date', precision: 0 }),
 
     // createdBy: text('created_by').notNull(), // only user can create a join request
-    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
+  (table) => [primaryKey({ columns: [table.groupId, table.userId] })],
 );
 
 // join request confirmed: joinRequest will be deleted and membership will be created
@@ -276,17 +285,19 @@ export const joinRequestsRelations = relations(joinRequests, ({ one }) => ({
 export const memberships = pgTable(
   'membership',
   {
-    userId: text('user_id').notNull(),
     groupId: text('group_id').notNull(),
+    userId: text('user_id').notNull(),
     invitedBy: text('invited_by'),
     createdBy: text('created_by').notNull(), // should be the same value as joinRequests.evaluatedBy
-    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
+      .notNull()
+      .defaultNow(),
 
     // dont use this | better to have table for status changes
-    // lastEditedAt: timestamp('last_edited_at', { mode: 'date' }),
+    // lastEditedAt: timestamp('last_edited_at', { mode: 'date', precision: 0 }),
     // lastEditedBy: text('last_edited_by'),
   },
-  (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
+  (table) => [primaryKey({ columns: [table.groupId, table.userId] })],
 );
 
 // payment status: current, past-due
@@ -349,7 +360,7 @@ export const memberCheckins = pgTable(
     // primarily used to ensure member can only check in once for any session per day | member can still check in to different sessions in a day
     // no need to include groupId, since sessionId is unique
     // primaryKey({
-    //   columns: [table.date, table.sessionId, table.userId],
+    //   columns: [table.sessionId, table.userId, table.date],
     // }),
 
     unique().on(table.sessionId, table.userId, table.date).nullsNotDistinct(),
@@ -407,15 +418,24 @@ export const memberCheckinsRelations = relations(memberCheckins, ({ one }) => ({
 // employment status: active, inactive, banned, resigned, terminated
 // remarks: terminated, resigned, on leave, etc.
 
+export const employeeRoleEnum = pgEnum(
+  'employee_role',
+  EMPLOYEE_ROLES,
+  // DAY_NAMES as unknown as readonly [string, ...string[]], // no need since DAY_NAMES already typecast to const
+);
+
 export const employments = pgTable(
   'employment',
   {
-    userId: text('user_id').notNull(),
     groupId: text('group_id').notNull(),
+    userId: text('user_id').notNull(),
+    role: employeeRoleEnum().notNull().default('employee'),
     createdBy: text('created_by').notNull(),
-    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
+  (table) => [primaryKey({ columns: [table.groupId, table.userId] })],
 );
 
 // employment status: active, inactive, banned, resigned, terminated
