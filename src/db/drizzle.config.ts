@@ -1,6 +1,5 @@
 import { defineConfig } from 'drizzle-kit';
 import type { Config as DrizzleConfig } from 'drizzle-kit';
-import '@/envConfig';
 
 import appConfig from '@/config/app.config';
 

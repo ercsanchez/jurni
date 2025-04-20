@@ -1,3 +1,4 @@
+import '@/envConfig';
 import getEnvValue from '@/utils/get-env-value';
 
 const appConfig = (function createConfig() {
