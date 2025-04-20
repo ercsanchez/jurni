@@ -1,5 +1,3 @@
-import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
-
 // returns original value if not an Array or string
 export function nullIfEmptyArrOrStr(arg: Array<unknown> | string | unknown) {
   if (typeof arg === 'string' || Array.isArray(arg)) {
@@ -55,6 +53,45 @@ export function nullIfEmptyObjOrStr(arg: unknown) {
 export const capitalizeFirstChar = (str: string) =>
   str.charAt(0).toUpperCase() + str.slice(1);
 
-// append timezone offset (+00:00) to time (00:00:00.000)
-export const appendTz = (str: string, tzOffset: string) =>
-  tzOffset ? `${str}+${tzOffset}` : `${str}+${DEFAULT_TIMEZONE_OFFSET}`;
+export const padLeftWithOneZero = (str: string) => {
+  return str.length === 0 ? '' : str.length === 1 ? '0' + str : str;
+};
+
+export const padLeftWithTwoZeroes = (str: string) => {
+  return str.length === 0
+    ? ''
+    : str.length === 1
+      ? '00' + str
+      : str.length === 2
+        ? '0' + str
+        : str;
+};
+
+// converts query results array that contain bigint type values to string
+export const queryDataWithBigintToStr = (
+  data: Array<{ [key: string]: unknown }>,
+  keys?: string | Array<string>, // specify key that is a bigint for faster loop exec
+) => {
+  if (typeof keys === 'string') {
+    return data.map((i) => {
+      if (typeof i[keys] === 'bigint') i[keys] = i[keys].toString();
+      return i;
+    });
+  }
+
+  if (Array.isArray(keys)) {
+    return data.map((i) => {
+      keys.forEach((k) => {
+        if (k in i && typeof i[k] === 'bigint') i[k] = i[k].toString();
+      });
+      return i;
+    });
+  }
+
+  return data.map((i) => {
+    for (const k in i) {
+      if (typeof i[k] === 'bigint') i[k] = i[k].toString();
+    }
+    return i;
+  });
+};
