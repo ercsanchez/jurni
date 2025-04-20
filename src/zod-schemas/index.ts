@@ -68,7 +68,9 @@ export const NameSearchParamsSchema = z
     }),
   })
   .partial() // makes all obj keys optional
-  .strict({ message: 'Some invalid URL query params present.' }); // failed validation when any key, not defined, is present
+  .strict({
+    message: `Some invalid URL query params present, aside from "name".`,
+  }); // failed validation when any key, not defined, is present
 
 export const AllSearchParamsSchema = z
   .object({
@@ -80,7 +82,7 @@ export const AllSearchParamsSchema = z
   })
   .partial()
   .strict({
-    message: `Some invalid URL query params present.`,
+    message: `Some invalid URL query params present, aside from "all".`,
   });
 
 const zStringId = (tableName: string) =>
@@ -104,7 +106,9 @@ export const UserIdsSchema = z.object({
 
 export const EvaluateJoinRequestsSchema = z.object({
   userIds: zArrayStringIds('User'),
-  confirmed: z.nullable(z.boolean({ message: 'Request must be denied.' })),
+  confirmed: z.nullable(
+    z.boolean({ message: 'Request must be confirmed/denied.' }),
+  ),
 });
 
 export const InsertGroupSessionSchema = z.object({
@@ -112,7 +116,7 @@ export const InsertGroupSessionSchema = z.object({
   day: z.enum(DAY_NAMES, { message: 'Invalid day value.' }),
   startAt: z.string().time(),
   endAt: z.string().time(),
-  tzOffset: z.optional(
+  timezoneOffset: z.optional(
     z.string().min(1, {
       message:
         'Timezone is optional but cannot be an empty string, when defined.',
@@ -125,14 +129,20 @@ export const UpdateGroupSessionSchema = z.object({
   id: z.string().min(1, {
     message: `Invalid Group Session Id. Empty string/(s) were passed.`,
   }),
-  name: z.string().min(1, { message: 'Name is required.' }).optional(),
+  name: z
+    .string()
+    .min(1, {
+      message: 'Name is optional but cannot be an empty string when defined.',
+    })
+    .optional(),
   active: z.boolean().optional(),
 
-  // owner can only edit these if no checkins for the session
+  // TODO: owner can only edit these if no checkins for the session
+  // name:
   // day: z.enum(DAY_NAMES, { message: 'Invalid day value.' }),
   // startAt: z.string().time(),
   // endAt: z.string().time(),
-  // tzOffset: z.optional(
+  // timezoneOffset: z.optional(
   //   z.string().min(1, {
   //     message:
   //       'Timezone is optional but cannot be an empty string, when defined.',
