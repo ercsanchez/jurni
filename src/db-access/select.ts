@@ -86,8 +86,13 @@ export const selectGroupByName = async ({
   return result;
 };
 
-export const selectGroupById = async (id: SelectGroup['id']) => {
-  const [result] = await db.select().from(groups).where(eq(groups.id, id));
+// export const selGroupById = async (id: SelectGroup['id']) => {
+//   const [result] = await db.select().from(groups).where(eq(groups.id, id));
+//   return result;
+// };
+
+export const selGroupBySlug = async (slug: SelectGroup['slug']) => {
+  const [result] = await db.select().from(groups).where(eq(groups.slug, slug));
   return result;
 };
 
@@ -160,9 +165,7 @@ export const selMemberCheckinsByGrpIdWherePeriodOrSessionIds = async ({
     .leftJoin(userProfiles, eq(users.id, userProfiles.userId));
 
   const result = queryResult.map((q) => {
-    q['member_checkin']['id'] = q[
-      'member_checkin'
-    ].id.toString() as unknown as bigint; // forced type assertion | should change the q obj property's type to string instead
+    q['member_checkin']['id'] = q['member_checkin'].id;
     return q;
 
     // - OR -

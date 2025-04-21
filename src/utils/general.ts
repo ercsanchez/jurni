@@ -1,3 +1,5 @@
+import slug, { slugifyWithCounter } from '@sindresorhus/slugify';
+
 // returns original value if not an Array or string
 export function nullIfEmptyArrOrStr(arg: Array<unknown> | string | unknown) {
   if (typeof arg === 'string' || Array.isArray(arg)) {
@@ -94,4 +96,30 @@ export const queryDataWithBigintToStr = (
     }
     return i;
   });
+};
+
+export const slugify = (str: string) => slug(str, { lowercase: true });
+
+export const createUniqSlugWithSelQryBySlug = async ({
+  str,
+  fn,
+}: {
+  str: string;
+  fn: (slug: string) => Promise<{ [key: string]: unknown }>;
+}) => {
+  const slugify = slugifyWithCounter();
+
+  let duplicateSlug, createdSlug;
+
+  do {
+    createdSlug = slugify(str, { lowercase: true });
+    // console.log('doing createdSlug-----', createdSlug);
+
+    const existingRecord = await fn(createdSlug);
+
+    // only break out of loop (dont iterate slugify) if slug doesn't exist
+    duplicateSlug = Boolean(existingRecord);
+  } while (duplicateSlug);
+
+  return createdSlug;
 };

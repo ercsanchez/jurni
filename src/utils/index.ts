@@ -13,12 +13,14 @@ import {
 import { type DbAccessFn } from './defs';
 import {
   capitalizeFirstChar,
+  createUniqSlugWithSelQryBySlug,
   isEmptyObjOrStr,
   nullIfEmptyArrOrStr,
   nullIfEmptyObjOrStr,
   // padLeftWithOneZero,
   // padLeftWithTwoZeroes,
   queryDataWithBigintToStr,
+  slugify,
 } from './general';
 import getEnvValue from './get-env-value';
 import {
@@ -49,12 +51,14 @@ export {
 
   // general -----------------------------
   capitalizeFirstChar,
+  createUniqSlugWithSelQryBySlug,
   isEmptyObjOrStr,
   nullIfEmptyArrOrStr,
   nullIfEmptyObjOrStr,
   // padLeftWithOneZero,
   // padLeftWithTwoZeroes,
   queryDataWithBigintToStr,
+  slugify,
 
   // get-env-value
   getEnvValue,

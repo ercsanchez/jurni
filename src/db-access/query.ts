@@ -117,11 +117,11 @@ export const queryFindProfileByUserIdWithUser = async (
   return result;
 };
 
-export const queryFindGroupByIdWithOwner = async ({
-  id,
+export const qryFindGroupBySlugWithOwner = async ({
+  slug,
   withOwner = true,
 }: {
-  id: SelectGroup['id'];
+  slug: SelectGroup['slug'];
   withOwner?: boolean;
 }) => {
   const conditionalQueryProps: WithOwner | object = withOwner
@@ -132,7 +132,7 @@ export const queryFindGroupByIdWithOwner = async ({
   //   withOwner ? { with: { owner: true } } : undefined;
 
   const result = await db.query.groups.findFirst({
-    where: eq(groups.id, id),
+    where: eq(groups.slug, slug),
     // with: {
     //   owner: true,
     // },

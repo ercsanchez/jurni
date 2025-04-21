@@ -69,9 +69,11 @@ export const insertOrUpdateUserProfile = async (
   return result ?? null;
 };
 
-export const insertGroup = async (newGroup: InsertGroup) => {
+export const insGroup = async (newGroup: InsertGroup) => {
   const [result] = await db.insert(groups).values(newGroup).returning({
     name: groups.name,
+    slug: groups.slug,
+    ownedBy: groups.ownedBy,
   });
 
   return result ?? null;
