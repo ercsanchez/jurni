@@ -25,7 +25,7 @@ export const insertUserAndAccountOnCredentialsRegister = async (
       const insertedUsers = await tx
         .insert(users)
         .values(newUser)
-        .returning({ email: users.email, id: users.id });
+        .returning({ email: users.email, id: users.id, name: users.name });
 
       const insertedUser = insertedUsers[0];
 

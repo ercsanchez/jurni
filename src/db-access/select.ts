@@ -22,9 +22,9 @@ import {
 } from '@/db/schema';
 import { nullIfEmptyArrOrStr } from '@/utils';
 
-export const selectUserByEmail = async (email: SelectUser['email']) => {
+export const selUserByEmail = async (email: SelectUser['email']) => {
   const [result] = await db.select().from(users).where(eq(users.email, email));
-  // console.log(`selectUserByEmail: ${JSON.stringify(result[0])}`);
+  // console.log(`selUserByEmail: ${JSON.stringify(result[0])}`);
 
   return result ?? null;
 };
@@ -32,6 +32,20 @@ export const selectUserByEmail = async (email: SelectUser['email']) => {
 export const selectUserById = async (id: SelectUser['id']) => {
   const [result] = await db.select().from(users).where(eq(users.id, id));
   // console.log(`selectUserById: ${JSON.stringify(result[0])}`);
+
+  return result ?? null;
+};
+
+export const selUserByName = async (name: SelectUser['name']) => {
+  const [result] = await db
+    .select()
+    .from(users)
+    .where(sql`${users.name}=${name}`);
+
+  // .where(eq(users.name, name)); // ts error because some name values will be null
+  // .where(sql`${users.name} IS NOT  NULL AND ${users.name}=${name}`); // no need to filter out non null values
+
+  console.log('result ====>', result);
 
   return result ?? null;
 };

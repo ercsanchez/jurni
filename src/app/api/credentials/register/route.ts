@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
 // import { DrizzleError } from 'drizzle-orm';
 
-import { selectUserByEmail } from '@/db-access/select';
+import { selUserByEmail, selUserByName } from '@/db-access/select';
 import { insertUserAndAccountOnCredentialsRegister } from '@/db-access/transaction';
 import {
+  createUniqSlugWithSelQryBySlug,
   hashPassword,
   httpRes,
   serverResponseError,
@@ -27,7 +28,7 @@ export const POST = async function POST(req: NextRequest) {
     }
 
     // const { email, password, confirmPassword, name } = validation.data;
-    const { email, password, confirmPassword } = validation.data;
+    const { email, password, confirmPassword, username } = validation.data;
 
     if (password !== confirmPassword) {
       return httpRes.badRequest({
@@ -35,7 +36,7 @@ export const POST = async function POST(req: NextRequest) {
       });
     }
 
-    const existingUser = await selectUserByEmail(email);
+    const existingUser = await selUserByEmail(email);
     // console.log('existingUser', existingUser);
 
     // do not allow user to register w/ credentials if user already has an existing acct., instead, let them add a password with api/profile/update-pword
@@ -47,15 +48,24 @@ export const POST = async function POST(req: NextRequest) {
 
     const hashedPassword = await hashPassword(password);
 
+    let createdNameSlug;
+    if (!username) {
+      const [emailUsername] = email!.split('@');
+      createdNameSlug = await createUniqSlugWithSelQryBySlug({
+        str: emailUsername,
+        fn: selUserByName,
+      });
+    }
+
     // by default next-auth doesn't expect user to have an account when registering via credentials
 
     // DB TRANSACTION
     // ensures user and account are always created together on registration via credentials
     const result = await insertUserAndAccountOnCredentialsRegister({
       password: hashedPassword,
-      // email,
-      // name,
-      ...validation.data,
+      email,
+      name: username ?? createdNameSlug,
+      // ...validation.data,
     });
 
     // no need since already throwing error in transaction

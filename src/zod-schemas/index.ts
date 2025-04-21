@@ -10,7 +10,10 @@ export const RegisterSchema = z.object({
   confirmPassword: z
     .string()
     .min(1, { message: 'Password confirmation is required' }),
-  name: z.string().min(1, { message: 'Name is required' }),
+  username: z
+    .string()
+    .min(1, { message: 'Username cannot be empty if provided.' })
+    .optional(),
 });
 
 export const LoginSchema = z.object({
