@@ -15,8 +15,10 @@
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",
     "@neondatabase/serverless": "^0.10.4",
+    "@sindresorhus/slugify": "^2.2.1",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.40.0",
+    "nanoid": "^5.1.5",
     "next": "15.2.0",
     "next-auth": "^5.0.0-beta.25",
     "react": "^19.0.0",
