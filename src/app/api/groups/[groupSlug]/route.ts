@@ -1,13 +1,24 @@
 import { currentAuthUser } from '@/lib/nextauth';
-import { queryFindGroupByIdWithOwner } from '@/db-access/query';
-import { selectUserById } from '@/db-access/select';
-import { updateGroup } from '@/db-access/update';
-import { httpRes, zodValidate, serverResponseError } from '@/utils';
+import { qryFindGroupBySlugWithOwner } from '@/db-access/query';
+import {
+  selGroupBySlug,
+  selectGroupByName,
+  selectUserById,
+} from '@/db-access/select';
+import { upGroup } from '@/db-access/update';
+import {
+  httpRes,
+  zodValidate,
+  serverResponseError,
+  createUniqSlugWithSelQryBySlug,
+  slugify,
+} from '@/utils';
 import { UpdateGroupSchema } from '@/zod-schemas';
+import { TableRecord } from '@/db/scripts/seed-generate';
 
 export const PATCH = async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   console.log('running PATCH api/groups');
 
@@ -33,20 +44,60 @@ export const PATCH = async function PATCH(
       return httpRes.badRequest({ message: validation?.message });
     }
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await queryFindGroupByIdWithOwner({
-      id: groupId,
-      withOwner: true,
-    });
+    const existingGroup: TableRecord | undefined =
+      await qryFindGroupBySlugWithOwner({
+        slug: groupSlug,
+        withOwner: true,
+      });
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
 
-    const result = await updateGroup({
-      id: groupId,
+    if (existingGroup.ownedBy !== sessionUser.id)
+      return httpRes.forbidden({
+        message: `Only the Group Owner is allowed to update the Group's details.`,
+      });
+
+    const changesExist = Object.entries(validation.data).some(([k, v]) => {
+      console.log('=====>', existingGroup[k], v);
+      return existingGroup[k] !== v;
+    });
+
+    // only update if there are changes to the group's details (e.g. name)
+    if (!changesExist)
+      return httpRes.ok({ message: 'No changes from DB record.' });
+
+    const { name } = validation.data;
+
+    const existingGroupWithDuplicateName = await selectGroupByName({ name });
+
+    if (existingGroupWithDuplicateName)
+      return httpRes.conflict({ message: 'Group Name already exists.' });
+
+    const nameChange = name !== existingGroup.name;
+    const uniqueSlug = slugify(name);
+    const recreateSlug = existingGroup.slug !== uniqueSlug;
+    const nameChangeData = !nameChange
+      ? {}
+      : recreateSlug
+        ? {
+            name,
+            slug: await createUniqSlugWithSelQryBySlug({
+              str: name,
+              fn: selGroupBySlug,
+            }),
+          }
+        : { name }; // no need to update slug since slug generated from the new name is already the one set for this group
+
+    const result = await upGroup({
+      id: existingGroup.id as number,
       ownedBy: sessionUser.id!,
-      ...validation.data,
+
+      ...nameChangeData,
+
+      // ...validation.data,
       // need this if zodValidate return value is typed
       // name: validation.data!.name,
       // ...(validation.data as { name: string }),
