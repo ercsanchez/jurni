@@ -30,6 +30,10 @@ export const UpdatePasswordSchema = z.object({
     .min(1, { message: 'Password confirmation is required' }),
 });
 
+export const UpdateUserNameSchema = z.object({
+  name: z.string().min(1, { message: 'Name cannot be empty.' }),
+});
+
 export const UpsertUserProfileSchema = z.object({
   firstName: z.string().min(1, { message: 'First Name is required' }),
   // z.optional means can be undefined
