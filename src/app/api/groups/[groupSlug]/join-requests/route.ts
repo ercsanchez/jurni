@@ -1,6 +1,6 @@
 import { currentAuthUser } from '@/lib/nextauth';
 import { SelectUser } from '@/db/schema';
-import { qryGroupById } from '@/db-access/query';
+import { qryGroupBySlug } from '@/db-access/query';
 import { selectUserById, selectUsersByIds } from '@/db-access/select';
 import { txDelJoinReqsThenInsMemberships } from '@/db-access/transaction';
 import { updateJoinRequests } from '@/db-access/update';
@@ -9,7 +9,7 @@ import { EvaluateJoinRequestsSchema } from '@/zod-schemas';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -23,15 +23,17 @@ export async function PATCH(
         message: 'Current Auth User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       whereEmployeeUserId: sessionUser.id,
     });
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
+
+    const { id: groupId } = existingGroup;
 
     // current user is not the group owner
     if (sessionUser.id !== existingGroup.ownedBy) {
@@ -105,7 +107,7 @@ export async function PATCH(
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -119,11 +121,11 @@ export async function GET(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
     // query group with current auth user's unconfirmed join request
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       whereEmployeeUserId: sessionUser.id,
       withJoinReqs: true,
     });
@@ -142,9 +144,9 @@ export async function GET(
       }
     }
 
-    const [result] = existingGroup.joinRequests;
+    const result = existingGroup.joinRequests;
 
-    if (!result)
+    if (result.length === 0)
       return httpRes.ok({
         message: 'No existing Join Requests for the Group.',
       });

@@ -170,8 +170,9 @@ export const queryFindGroupByIdWithMemberships = async (
   return result ?? null;
 };
 
-export const qryGroupById = async ({
-  groupId,
+export const qryGroupBySlug = async ({
+  // groupId,
+  groupSlug,
   whereEmployeeUserId,
   whereMemberUserId,
   whereJoinReqUserId,
@@ -181,7 +182,8 @@ export const qryGroupById = async ({
   withJoinReqs = false,
   withGroupSessions = false,
 }: {
-  groupId: SelectGroup['id'];
+  // groupId: SelectGroup['id'];
+  groupSlug: SelectGroup['slug'];
   whereEmployeeUserId?: SelectEmployment['userId'];
   whereMemberUserId?: SelectMembership['userId'];
   whereJoinReqUserId?: SelectJoinRequest['userId'];
@@ -199,7 +201,7 @@ export const qryGroupById = async ({
     //   withJoinReqs ? { joinRequests: { with: { user: true } } } : {};
 
     const result = await db.query.groups.findFirst({
-      where: eq(groups.id, groupId),
+      where: eq(groups.slug, groupSlug),
       with: {
         employments: whereEmployeeUserId
           ? // get employee record of current auth user
@@ -242,7 +244,7 @@ export const qryGroupById = async ({
   }
 };
 
-// redundant | use qryGroupById
+// redundant | use qryGroupBySlug
 // export const queryFindGroupByIdWithEmployments = async (
 //   groupId: SelectGroup['id'],
 // ) => {
@@ -254,7 +256,7 @@ export const qryGroupById = async ({
 //   return result ?? null;
 // };
 
-// export const qryGroupByIdWithJoinReqByUserId = async ({
+// export const qryGroupBySlugWithJoinReqByUserId = async ({
 //   groupId,
 //   userId,
 //   unevaluated,

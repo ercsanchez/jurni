@@ -1,7 +1,7 @@
 import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 import { insGroupSession } from '@/db-access/insert';
-import { qryGroupById } from '@/db-access/query';
-import { selGroupById, selectUserById } from '@/db-access/select';
+import { qryGroupBySlug } from '@/db-access/query';
+import { selGroupBySlug, selectUserById } from '@/db-access/select';
 import { updateGroupSession } from '@/db-access/update';
 import { currentAuthUser } from '@/lib/nextauth';
 import {
@@ -17,7 +17,7 @@ import {
 
 export const POST = async function POST(
   req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -33,13 +33,15 @@ export const POST = async function POST(
         message: 'Account does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await selGroupById(groupId);
+    const existingGroup = await selGroupBySlug(groupSlug);
 
     if (!existingGroup) {
       return httpRes.notFound({ message: 'Group does not exist.' });
     }
+
+    const { id: groupId } = existingGroup;
 
     if (existingGroup.ownedBy !== sessionUser.id) {
       return httpRes.forbidden({
@@ -89,7 +91,7 @@ export const POST = async function POST(
 
 export const PATCH = async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -104,7 +106,7 @@ export const PATCH = async function PATCH(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
     const data = await req.json();
 
@@ -113,13 +115,15 @@ export const PATCH = async function PATCH(
     if (!validation?.success)
       return httpRes.badRequest({ message: validation?.message });
 
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       whereGroupSessionId: validation.data.id,
     });
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
+
+    const { id: groupId } = existingGroup;
 
     if (existingGroup.ownedBy !== sessionUser.id)
       return httpRes.forbidden({
@@ -164,7 +168,7 @@ export const PATCH = async function PATCH(
 
 export const GET = async function GET(
   _req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -179,10 +183,10 @@ export const GET = async function GET(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       withGroupSessions: true,
     });
 

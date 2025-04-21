@@ -1,9 +1,9 @@
 import { currentAuthUser } from '@/lib/nextauth';
 import { delJoinReq } from '@/db-access/delete';
 import { insertJoinRequest } from '@/db-access/insert';
-import { qryGroupById } from '@/db-access/query';
+import { qryGroupBySlug } from '@/db-access/query';
 import {
-  selGroupById,
+  selGroupBySlug,
   selJoinRequest,
   selectUserById,
 } from '@/db-access/select';
@@ -12,7 +12,7 @@ import { httpRes, serverResponseError } from '@/utils';
 // authenticated user requests to join group
 export async function POST(
   _req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -26,17 +26,19 @@ export async function POST(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    // const existingGroup = await selGroupById(groupId);
+    // const existingGroup = await selGroupBySlug(groupSlug);
 
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       whereMemberUserId: sessionUser.id,
     });
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
+
+    const { id: groupId } = existingGroup;
 
     const [existingMembership] = existingGroup.memberships;
 
@@ -70,7 +72,7 @@ export async function POST(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -84,12 +86,12 @@ export async function DELETE(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
     // NO NEED TO CHECK IF USER HAS A JOIN REQ
     // query group with current auth user's unconfirmed join request
     // do not delete if it was already evaluated (joinRequests.confirmed is not null)
-    // const existingGroup = await qryGroupByIdWithJoinReqByUserId({
+    // const existingGroup = await qryGroupBySlugWithJoinReqByUserId({
     //   userId: sessionUser.id!,
     //   groupId,
     //   unevaluated: true,
@@ -106,10 +108,12 @@ export async function DELETE(
     //   groupId,
     // });
 
-    const existingGroup = await selGroupById(groupId);
+    const existingGroup = await selGroupBySlug(groupSlug);
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
+
+    const { id: groupId } = existingGroup;
 
     const result = await delJoinReq({
       userId: sessionUser.id!,
@@ -132,7 +136,7 @@ export async function DELETE(
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -146,9 +150,9 @@ export async function GET(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await selGroupById(groupId);
+    const existingGroup = await selGroupBySlug(groupSlug);
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });

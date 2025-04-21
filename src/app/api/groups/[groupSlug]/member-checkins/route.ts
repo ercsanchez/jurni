@@ -3,9 +3,9 @@ import { NextRequest } from 'next/server';
 import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 import { SelectMembership } from '@/db/schema';
 import { insMemberCheckins } from '@/db-access/insert';
-import { qryGroupById } from '@/db-access/query';
+import { qryGroupBySlug } from '@/db-access/query';
 import {
-  selGroupById,
+  selGroupBySlug,
   selectUserById,
   selMemberCheckinsByGrpIdWherePeriodOrSessionIds,
   selMembershipsByUserIdsGroupId,
@@ -27,7 +27,7 @@ import {
 
 export const POST = async function POST(
   req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -43,7 +43,7 @@ export const POST = async function POST(
         message: 'Account does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
     const data = await req.json();
 
@@ -55,8 +55,8 @@ export const POST = async function POST(
 
     const { userIds, sessionId, createdAt } = validation.data;
 
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       whereEmployeeUserId: sessionUser.id,
       whereGroupSessionId: sessionId,
     });
@@ -64,6 +64,8 @@ export const POST = async function POST(
     if (!existingGroup) {
       return httpRes.notFound({ message: 'Group does not exist.' });
     }
+
+    const { id: groupId } = existingGroup;
 
     const [existingGroupSession] = existingGroup.groupSessions;
 
@@ -162,7 +164,7 @@ export const POST = async function POST(
 
 export const PATCH = async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -177,10 +179,10 @@ export const PATCH = async function PATCH(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       whereEmployeeUserId: sessionUser.id,
     });
 
@@ -243,7 +245,7 @@ export const PATCH = async function PATCH(
 
 export const GET = async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -258,12 +260,14 @@ export const GET = async function GET(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await selGroupById(groupId);
+    const existingGroup = await selGroupBySlug(groupSlug);
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
+
+    const { id: groupId } = existingGroup;
 
     // hasSearchParams is true when path?char (>= 1 char after ?) and false when path? or path (w/o ?)
     const hasSearchParams = nullIfEmptyArrOrStr(req.nextUrl.search);

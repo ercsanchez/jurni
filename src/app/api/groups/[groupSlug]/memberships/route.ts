@@ -1,6 +1,6 @@
 import { currentAuthUser } from '@/lib/nextauth';
 import { SelectUser } from '@/db/schema';
-import { qryGroupById } from '@/db-access/query';
+import { qryGroupBySlug } from '@/db-access/query';
 import { selectUserById, selectUsersByIds } from '@/db-access/select';
 import { txInsMembershipsAndDelJoinReqsIfExists } from '@/db-access/transaction';
 import { httpRes, serverResponseError, zodValidate } from '@/utils';
@@ -8,7 +8,7 @@ import { UserIdsSchema } from '@/zod-schemas';
 
 export const POST = async function POST(
   req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   console.log('running POST /groups/[id]/memberships');
 
@@ -26,10 +26,10 @@ export const POST = async function POST(
         message: 'Account does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       whereEmployeeUserId: sessionUser.id,
     });
 
@@ -37,6 +37,8 @@ export const POST = async function POST(
       console.log('running');
       return httpRes.notFound({ message: 'Group does not exist.' });
     }
+
+    const { id: groupId } = existingGroup;
 
     // current user is not the group owner
     if (sessionUser.id !== existingGroup.ownedBy) {
@@ -111,7 +113,7 @@ export const POST = async function POST(
 
 export const GET = async function GET(
   _req: Request,
-  { params }: { params: Promise<{ groupId: string }> },
+  { params }: { params: Promise<{ groupSlug: string }> },
 ) {
   try {
     const sessionUser = await currentAuthUser();
@@ -126,10 +128,10 @@ export const GET = async function GET(
         message: 'User does not exist.',
       });
 
-    const { groupId } = await params;
+    const { groupSlug } = await params;
 
-    const existingGroup = await qryGroupById({
-      groupId,
+    const existingGroup = await qryGroupBySlug({
+      groupSlug,
       withMembers: true,
     });
 
