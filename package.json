@@ -9,8 +9,14 @@
     "lint": "next lint",
     "format": "prettier '**/*.{cjs,mjs,js,jsx,ts,tsx,css,scss,sass,md}' --cache --write",
     "prepare": "husky",
+    "seed:generate": "tsx src/db/scripts/seed-generate.ts",
+    "db:studio": "drizzle-kit studio --config src/db/drizzle.config.ts",
+    "db:clear": "tsx src/db/scripts/clear-db.ts",
     "db:push": "drizzle-kit push --config src/db/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config src/db/drizzle.config.ts"
+    "db:clear-push": "npm run db:clear && drizzle-kit push --config src/db/drizzle.config.ts",
+    "db:seed": "tsx src/db/scripts/seed-db.ts",
+    "db:reset": "npm run db:clear-push && npm run db:seed",
+    "db:gen-seed-reset": "npm run seed:generate && npm run db:reset"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",
@@ -27,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@faker-js/faker": "^9.7.0",
     "@next/env": "^15.2.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -41,6 +48,7 @@
     "prettier": "^3.5.2",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4",
+    "tsx": "^4.19.3",
     "typescript": "^5"
   }
 }
