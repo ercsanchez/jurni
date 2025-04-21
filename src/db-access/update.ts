@@ -15,12 +15,26 @@ import {
 } from '@/db/schema';
 import { nullIfEmptyArrOrStr, queryDataWithBigintToStr } from '@/utils';
 
-export const updateUserEmailVerified = async (userId: SelectUser['id']) => {
+// updates emailVerified and name
+export const upUser = async ({
+  userId,
+  verifyEmail,
+  name,
+}: {
+  userId: SelectUser['id'];
+  verifyEmail?: boolean;
+  name?: SelectUser['name'];
+}) => {
+  const data = {
+    name: name ? name : undefined,
+    emailVerified: verifyEmail ? new Date() : undefined,
+  };
+
   const [result] = await db
     .update(users)
-    .set({ emailVerified: new Date() })
+    .set(data)
     .where(eq(users.id, userId))
-    .returning({ id: users.id, email: users.email });
+    .returning({ id: users.id, email: users.email, name: users.name });
 
   return result ?? null;
 };

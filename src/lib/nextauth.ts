@@ -1,13 +1,18 @@
 import NextAuth from 'next-auth';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 
-import authConfig from '@/lib/nextauth.config';
 import { db } from '@/db';
-import { updateUserEmailVerified } from '@/db-access/update';
-import { selectUserById } from '@/db-access/select';
+import { accounts, users } from '@/db/schema';
+import { selectUserById, selUserByName } from '@/db-access/select';
+import { upUser } from '@/db-access/update';
+import authConfig from '@/lib/nextauth.config';
+import { createUniqSlugWithSelQryBySlug } from '@/utils';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: DrizzleAdapter(db),
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+  }),
   session: { strategy: 'jwt' },
   basePath: '/api/auth', // default: /api/auth
 
@@ -17,7 +22,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // credentials provider needs a separate process to verify user's email, since it doesn't fire linkAccount event on registration
     async linkAccount({ user }) {
       console.log(`linkAccount user: ${JSON.stringify(user)}`);
-      await updateUserEmailVerified(user.id!);
+
+      // if user doesn't have a name from the oauth provider, then create a slug based on oauth email username
+      let createdNameSlug;
+      if (!user.name) {
+        const [emailUsername] = user.email!.split('@');
+        createdNameSlug = await createUniqSlugWithSelQryBySlug({
+          str: emailUsername,
+          fn: selUserByName,
+        });
+      }
+      const name = user.name ? undefined : createdNameSlug;
+
+      await upUser({ userId: user.id!, verifyEmail: true, name });
     },
   },
   jwt: {
@@ -57,7 +74,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (account?.provider === 'credentials') {
         // only execute the following if signing in thru credentials
         // you can also use selectUserById(user.id!)
-        // const existingUser = await selectUserByEmail(user.email!);
+        // const existingUser = await selUserByEmail(user.email!);
         // if credentials provider and email not verified then refuse sign in
         // if (!existingUser?.emailVerified) return false;
         // if (!user?.emailVerified) return false; // will cause a typescript error since next-auth user has a User | AdapterUser type (w/c doesn't have emailVerified)
