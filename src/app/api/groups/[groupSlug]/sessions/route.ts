@@ -1,7 +1,7 @@
 import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 import { insGroupSession } from '@/db-access/insert';
 import { qryGroupById } from '@/db-access/query';
-import { selectGroupById, selectUserById } from '@/db-access/select';
+import { selGroupById, selectUserById } from '@/db-access/select';
 import { updateGroupSession } from '@/db-access/update';
 import { currentAuthUser } from '@/lib/nextauth';
 import {
@@ -35,7 +35,7 @@ export const POST = async function POST(
 
     const { groupId } = await params;
 
-    const existingGroup = await selectGroupById(groupId);
+    const existingGroup = await selGroupById(groupId);
 
     if (!existingGroup) {
       return httpRes.notFound({ message: 'Group does not exist.' });

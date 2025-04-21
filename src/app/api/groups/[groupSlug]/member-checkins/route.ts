@@ -5,7 +5,7 @@ import { SelectMembership } from '@/db/schema';
 import { insMemberCheckins } from '@/db-access/insert';
 import { qryGroupById } from '@/db-access/query';
 import {
-  selectGroupById,
+  selGroupById,
   selectUserById,
   selMemberCheckinsByGrpIdWherePeriodOrSessionIds,
   selMembershipsByUserIdsGroupId,
@@ -260,7 +260,7 @@ export const GET = async function GET(
 
     const { groupId } = await params;
 
-    const existingGroup = await selectGroupById(groupId);
+    const existingGroup = await selGroupById(groupId);
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });

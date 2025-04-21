@@ -3,7 +3,7 @@ import { delJoinReq } from '@/db-access/delete';
 import { insertJoinRequest } from '@/db-access/insert';
 import { qryGroupById } from '@/db-access/query';
 import {
-  selectGroupById,
+  selGroupById,
   selJoinRequest,
   selectUserById,
 } from '@/db-access/select';
@@ -28,7 +28,7 @@ export async function POST(
 
     const { groupId } = await params;
 
-    // const existingGroup = await selectGroupById(groupId);
+    // const existingGroup = await selGroupById(groupId);
 
     const existingGroup = await qryGroupById({
       groupId,
@@ -106,7 +106,7 @@ export async function DELETE(
     //   groupId,
     // });
 
-    const existingGroup = await selectGroupById(groupId);
+    const existingGroup = await selGroupById(groupId);
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });
@@ -148,7 +148,7 @@ export async function GET(
 
     const { groupId } = await params;
 
-    const existingGroup = await selectGroupById(groupId);
+    const existingGroup = await selGroupById(groupId);
 
     if (!existingGroup)
       return httpRes.notFound({ message: 'Group does not exist.' });

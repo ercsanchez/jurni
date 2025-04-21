@@ -3,7 +3,7 @@ import { insEmployments } from '@/db-access/insert';
 import { SelectUser } from '@/db/schema';
 import { qryGroupById } from '@/db-access/query';
 import {
-  selectGroupById,
+  selGroupById,
   selectUserById,
   selectUsersByIds,
 } from '@/db-access/select';
@@ -30,7 +30,7 @@ export const POST = async function POST(
 
     const { groupId } = await params;
 
-    const existingGroup = await selectGroupById(groupId);
+    const existingGroup = await selGroupById(groupId);
 
     // console.log('existing group ======>', existingGroup);
 
@@ -158,7 +158,7 @@ export const GET = async function GET(
 
 //     const { groupId } = await params;
 
-//     const existingGroup = await selectGroupById(groupId);
+//     const existingGroup = await selGroupById(groupId);
 
 //     if (!existingGroup)
 //       return httpRes.notFound({ message: 'Group does not exist.' });

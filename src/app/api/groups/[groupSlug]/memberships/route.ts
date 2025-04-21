@@ -167,7 +167,7 @@ export const GET = async function GET(
 
 //     const { groupId } = await params;
 
-//     const existingGroup = await selectGroupById(groupId);
+//     const existingGroup = await selGroupById(groupId);
 
 //     if (!existingGroup)
 //       return httpRes.notFound({ message: 'Group does not exist.' });
