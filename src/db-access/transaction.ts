@@ -3,15 +3,19 @@ import { eq, sql } from 'drizzle-orm';
 import { dbPool as db } from '@/db';
 import {
   accounts,
+  employments,
+  groups,
   joinRequests,
   memberships,
   users,
+  type InsertGroup,
   type InsertJoinRequest,
   type InsertMembership,
   type InsertUser,
   type SelectUser,
 } from '@/db/schema';
 import { nullIfEmptyArrOrStr } from '@/utils';
+import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 
 export const insertUserAndAccountOnCredentialsRegister = async (
   newUser: InsertUser,
@@ -97,6 +101,57 @@ export const updateUserPasswordAndInsertCredentialsAccount = async (
 
     // no need to return null if no result, since we will rollback if unsuccessful, w/c will produce an error
     return result ?? null;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const txInsGroupThenInsOwnerAsEmployee = async ({
+  name,
+  ownedBy,
+  slug,
+  defaultTimezoneOffset,
+}: {
+  name: InsertGroup['name'];
+  ownedBy: InsertGroup['ownedBy'];
+  slug: InsertGroup['slug'];
+  defaultTimezoneOffset?: InsertGroup['defaultTimezoneOffset'];
+}) => {
+  try {
+    const defaultTzOffset = defaultTimezoneOffset ?? DEFAULT_TIMEZONE_OFFSET;
+
+    const result = await db.transaction(async (tx) => {
+      const [createdGroup] = await tx
+        .insert(groups)
+        .values({
+          name,
+          ownedBy,
+          slug,
+          defaultTimezoneOffset: defaultTzOffset,
+        })
+        .returning();
+
+      const [createdEmployee] = await tx
+        .insert(employments)
+        .values({
+          userId: ownedBy,
+          groupId: createdGroup.id,
+          createdBy: ownedBy,
+          role: 'owner',
+        })
+        .onConflictDoNothing({
+          target: [employments.userId, employments.groupId],
+        })
+        .returning();
+
+      if (!createdEmployee) {
+        tx.rollback();
+      }
+
+      return { group: createdGroup, employee: createdEmployee };
+    });
+
+    return result;
   } catch (error) {
     console.error(error);
   }

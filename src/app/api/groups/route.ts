@@ -1,17 +1,20 @@
 import { NextRequest } from 'next/server';
 
-import { currentAuthUser } from '@/lib/nextauth';
-import { insertGroup } from '@/db-access/insert';
+import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 import { queryFindUserByIdWithOwnedGroups } from '@/db-access/query';
 import {
   selectAllGroups,
   selectGroupByName,
+  selGroupBySlug,
   selectUserById,
 } from '@/db-access/select';
+import { txInsGroupThenInsOwnerAsEmployee } from '@/db-access/transaction';
+import { currentAuthUser } from '@/lib/nextauth';
 import {
-  queryDbWithSearchParams,
+  createUniqSlugWithSelQryBySlug,
   httpRes,
   nullIfEmptyArrOrStr,
+  queryDbWithSearchParams,
   serverResponseError,
   zodValidate,
   type DbAccessFn,
@@ -24,8 +27,6 @@ import {
 
 // valid search queries: ?all=true | ?name=group-name
 export const GET = async function GET(req: NextRequest) {
-  console.log('running GET api/groups');
-
   try {
     const sessionUser = await currentAuthUser();
 
@@ -101,15 +102,13 @@ export const GET = async function GET(req: NextRequest) {
 };
 
 export const POST = async function POST(req: Request) {
-  console.log('running POST api/groups');
-
   try {
     const sessionUser = await currentAuthUser();
 
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selectUserById(sessionUser.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -123,7 +122,7 @@ export const POST = async function POST(req: Request) {
     if (!validation?.success)
       return httpRes.badRequest({ message: validation?.message });
 
-    const { name } = validation.data!;
+    const { name, defaultTimezonOffset } = validation.data!;
 
     // need to check if group name already exists so that we can inform user why req failed, unless, we restrict user (on the client-side) from sending a request if there is a name conflict (e.g. disable "create group" button until user chooses another name)
 
@@ -132,10 +131,25 @@ export const POST = async function POST(req: Request) {
     if (existingGroup)
       return httpRes.conflict({ message: 'Group Name already exists.' });
 
-    const result = await insertGroup({
-      ownedBy: sessionUser.id!,
+    const uniqueSlug = await createUniqSlugWithSelQryBySlug({
+      str: name,
+      fn: selGroupBySlug,
+    });
+
+    // const result = await insGroup({
+    //   ownedBy: sessionUser.id!,
+    //   name,
+    //   slug: uniqueSlug,
+    //   defaultTimezoneOffset: defaultTimezonOffset ?? DEFAULT_TIMEZONE_OFFSET,
+    //   // ...(validation.data! as { name: string; } // also works | ts doesn't know the form of ...(someVar) so need to typecast
+    // });
+
+    // need to immediately create group owner's employee record after creating the group
+    const result = await txInsGroupThenInsOwnerAsEmployee({
       name,
-      // ...(validation.data! as { name: string; } // also works | ts doesn't know the form of ...(someVar) so need to typecast
+      ownedBy: sessionUser.id!,
+      slug: uniqueSlug,
+      defaultTimezoneOffset: defaultTimezonOffset ?? DEFAULT_TIMEZONE_OFFSET,
     });
 
     if (!result)

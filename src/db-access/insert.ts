@@ -3,7 +3,7 @@ import { db } from '@/db';
 import {
   accounts,
   employments,
-  groups,
+  // groups,
   groupSessions,
   joinRequests,
   memberCheckins,
@@ -12,7 +12,7 @@ import {
   userProfiles,
   type InsertAccount,
   type InsertEmployment,
-  type InsertGroup,
+  // type InsertGroup,
   type InsertGroupSession,
   type InsertJoinRequest,
   type InsertMemberCheckin,
@@ -69,15 +69,15 @@ export const insertOrUpdateUserProfile = async (
   return result ?? null;
 };
 
-export const insGroup = async (newGroup: InsertGroup) => {
-  const [result] = await db.insert(groups).values(newGroup).returning({
-    name: groups.name,
-    slug: groups.slug,
-    ownedBy: groups.ownedBy,
-  });
+// export const insGroup = async (newGroup: InsertGroup) => {
+//   const [result] = await db.insert(groups).values(newGroup).returning({
+//     name: groups.name,
+//     slug: groups.slug,
+//     ownedBy: groups.ownedBy,
+//   });
 
-  return result ?? null;
-};
+//   return result ?? null;
+// };
 
 export const insertJoinRequest = async (newJoinReq: InsertJoinRequest) => {
   const [result] = await db

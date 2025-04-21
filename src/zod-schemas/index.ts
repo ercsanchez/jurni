@@ -39,6 +39,12 @@ export const UpsertUserProfileSchema = z.object({
 
 export const InsertGroupSchema = z.object({
   name: z.string().min(1, { message: 'Name is required.' }),
+  defaultTimezonOffset: z.optional(
+    z.string().min(1, {
+      message:
+        'Timezone is optional but cannot be an empty string, when defined.',
+    }),
+  ),
 });
 
 export const UpdateGroupSchema = z.object({
