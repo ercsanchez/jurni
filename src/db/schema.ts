@@ -169,8 +169,11 @@ export const groups = pgTable('group', {
   defaultTimezoneOffset: varchar('default_timezone_offset', { length: 6 })
     .notNull()
     .default(DEFAULT_TIMEZONE_OFFSET),
+  slug: varchar('slug', { length: 320 }).notNull().unique(),
+  createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
+    .notNull()
+    .defaultNow(),
 
-  // TODO: slug that will be used as a url path param
   // TODO: add createdBy & createdAt
 });
 
