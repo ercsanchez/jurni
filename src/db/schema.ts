@@ -1,7 +1,6 @@
 import { relations } from 'drizzle-orm';
 import {
   bigint,
-  bigserial,
   boolean,
   date,
   // foreignKey,
@@ -28,7 +27,7 @@ import {
 export type ExtendedAdapterAccountType = AdapterAccountType | 'credentials';
 
 export const users = pgTable('user', {
-  // id: bigserial('id', { mode: 'number' }) // drizzle adapter error because expects a vrchar/text/uuid type
+  // id: bigserial('id', { mode: 'number' }) // drizzle adapter error because next-auth expects a varchar/text/uuid type for user ids
   id: varchar('id', { length: 7 })
     .primaryKey()
     .$defaultFn(() => nanoid(7)),
@@ -161,8 +160,10 @@ export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
 }));
 
 export const groups = pgTable('group', {
-  id: bigserial('id', { mode: 'number' }).primaryKey(),
-  // slug:
+  // id: bigserial('id', { mode: 'number' }).primaryKey(), // postgresql has deprecated bigserial | use bigint instead
+  id: bigint('id', { mode: 'number' })
+    .primaryKey()
+    .generatedByDefaultAsIdentity(), // generatedAlwaysAsIdentity does not allow inserting records with a specified id value and will lead to seed data errors
   ownedBy: varchar('owned_by', { length: 7 }).notNull(),
   // .references(() => users.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 256 }).notNull().unique(),
@@ -199,7 +200,9 @@ export const dayEnum = pgEnum(
 export const groupSessions = pgTable(
   'group_session',
   {
-    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    id: bigint('id', { mode: 'number' })
+      .primaryKey()
+      .generatedByDefaultAsIdentity(),
     groupId: bigint('group_id', { mode: 'number' }).notNull(),
     name: varchar('name', { length: 256 }).notNull(), // should not be unique so that multiple sessions w/ same name but different day/times
     day: dayEnum().notNull(),
@@ -330,7 +333,9 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
 export const memberCheckins = pgTable(
   'member_checkin',
   {
-    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    id: bigint('id', { mode: 'number' })
+      .primaryKey()
+      .generatedByDefaultAsIdentity(),
 
     // membership relation
     groupId: bigint('group_id', { mode: 'number' }).notNull(),
@@ -353,8 +358,8 @@ export const memberCheckins = pgTable(
     createdBy: varchar('created_by', { length: 7 }).notNull(),
 
     confirmed: boolean(),
-    confirmedBy: varchar('confirmed_by', { length: 7 }),
-    confirmedAt: timestamp('confirmed_at', { mode: 'date', precision: 0 }),
+    evaluatedBy: varchar('evaluated_by', { length: 7 }),
+    evaluatedAt: timestamp('evaluated_at', { mode: 'date', precision: 0 }),
 
     // TODO: add fields lastEditedBy
   },
@@ -431,7 +436,7 @@ export const employments = pgTable(
   {
     groupId: bigint('group_id', { mode: 'number' }).notNull(),
     userId: varchar('user_id', { length: 7 }).notNull(),
-    role: employeeRoleEnum().notNull().default('employee'),
+    role: employeeRoleEnum().notNull().default('staff'),
     createdBy: varchar('created_by', { length: 7 }).notNull(),
     createdAt: timestamp('created_at', { mode: 'date', precision: 0 })
       .notNull()
