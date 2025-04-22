@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
 
 import { currentAuthUser } from '@/lib/nextauth';
-import { insertOrUpdateUserProfile } from '@/db-access/insert';
+import { insOrUpdateUserProfile } from '@/db-access/insert';
 import {
-  queryFindUserByIdWithProfile,
-  // queryFindProfileByUserIdWithUser
+  qryFindUserByIdWithProfile,
+  // qryFindProfileByUserIdWithUser
 } from '@/db-access/query';
-import { selectUserById } from '@/db-access/select';
+import { selUserById } from '@/db-access/select';
 import { httpRes, zodValidate, serverResponseError } from '@/utils';
 import { UpsertUserProfileSchema } from '@/zod-schemas';
 
@@ -19,14 +19,14 @@ export async function GET(_req: NextRequest | Request) {
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
         message: 'Account does not exist.',
       });
 
-    const result = await queryFindUserByIdWithProfile(sessionUser.id!);
+    const result = await qryFindUserByIdWithProfile(sessionUser.id!);
 
     if (!result?.profile)
       return httpRes.notFound({ message: 'Account Profile does not exist.' });
@@ -54,7 +54,7 @@ export const PUT = async function PUT(req: NextRequest | Request) {
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -71,7 +71,7 @@ export const PUT = async function PUT(req: NextRequest | Request) {
     // TODO: optional db table fields (e.g. middleName) will be written with null if no value, should I check if null/undefined and write empty string to db?
     // const { firstName, middleName, lastName } = validation.data;
 
-    const result = await insertOrUpdateUserProfile({
+    const result = await insOrUpdateUserProfile({
       ...validation.data,
       userId: sessionUser.id!,
     });
@@ -82,13 +82,13 @@ export const PUT = async function PUT(req: NextRequest | Request) {
       });
 
     // console.log('error: userWithProfile');
-    // const userWithProfile = await queryFindUserByIdWithProfile(
+    // const userWithProfile = await qryFindUserByIdWithProfile(
     //   sessionUser.id!,
     // );
     // console.log('userWithProfile', userWithProfile);
 
     // console.log('error: userProfileWithUser');
-    // const userProfileWithUser = await queryFindProfileByUserIdWithUser(
+    // const userProfileWithUser = await qryFindProfileByUserIdWithUser(
     //   sessionUser.id!,
     // );
     // console.log('userProfileWithUser', userProfileWithUser);

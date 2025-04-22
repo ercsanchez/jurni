@@ -6,7 +6,7 @@ import { SelectAccount } from '@/db/schema';
 
 import appConfig from '@/config/app.config';
 import { LoginSchema } from '@/zod-schemas';
-import { queryFindUserByEmailWithAcctWhereProvider } from '@/db-access/query';
+import { qryFindUserByEmailWithAcctWhereProvider } from '@/db-access/query';
 import { comparePassword, zodValidate } from '@/utils';
 
 export default {
@@ -46,7 +46,7 @@ export default {
 
           console.log('validation success--------------');
 
-          const existingUser = await queryFindUserByEmailWithAcctWhereProvider(
+          const existingUser = await qryFindUserByEmailWithAcctWhereProvider(
             email,
             'credentials',
           );

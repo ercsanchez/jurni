@@ -39,7 +39,7 @@ export const upUser = async ({
   return result ?? null;
 };
 
-export const updateUserPassword = async (
+export const upUserPassword = async (
   userId: SelectUser['id'],
   hashedPword: SelectUser['password'],
 ) => {
@@ -77,7 +77,7 @@ export const upGroup = async ({
   return result ?? null;
 };
 
-export const updateJoinRequests = async (data: {
+export const upJoinRequests = async (data: {
   userIds: Array<SelectJoinRequest['userId']>;
   groupId: SelectJoinRequest['groupId'];
   confirmed: SelectJoinRequest['confirmed'];
@@ -101,7 +101,7 @@ export const updateJoinRequests = async (data: {
   return nullIfEmptyArrOrStr(result);
 };
 
-export const updateGroupSession = async (data: {
+export const upGroupSession = async (data: {
   id: SelectGroupSession['id'];
   name: SelectGroupSession['name'];
   active: SelectGroupSession['active'];

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 // import { DrizzleError } from 'drizzle-orm';
 
 import { selUserByEmail, selUserByName } from '@/db-access/select';
-import { insertUserAndAccountOnCredentialsRegister } from '@/db-access/transaction';
+import { txInsUserAndAccountOnCredentialsRegister } from '@/db-access/transaction';
 import {
   createUniqSlugWithSelQryBySlug,
   hashPassword,
@@ -61,7 +61,7 @@ export const POST = async function POST(req: NextRequest) {
 
     // DB TRANSACTION
     // ensures user and account are always created together on registration via credentials
-    const result = await insertUserAndAccountOnCredentialsRegister({
+    const result = await txInsUserAndAccountOnCredentialsRegister({
       password: hashedPassword,
       email,
       name: username ?? createdNameSlug,
@@ -96,7 +96,7 @@ export const POST = async function POST(req: NextRequest) {
 
 // ------------------------------------------------------------------
 // // SEPARATE QUERIES
-// const insertedUser = await insertUser({
+// const insertedUser = await insUser({
 //   password: hashedPassword,
 //   email,
 //   name,
@@ -110,7 +110,7 @@ export const POST = async function POST(req: NextRequest) {
 // }
 
 // // create account record | this should be a transaction with user creation
-// const insertedAccount = await insertAccount({
+// const insertedAccount = await insAccount({
 //   userId: insertedUser.id,
 //   providerAccountId: insertedUser.id,
 //   type: 'credentials',

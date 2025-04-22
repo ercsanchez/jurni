@@ -48,7 +48,7 @@ export const delUnevaluatedJoinReq = async ({
   return result ?? null;
 };
 
-export const deleteMembershipById = async ({
+export const delMembershipById = async ({
   userId,
   groupId,
 }: {
@@ -64,7 +64,7 @@ export const deleteMembershipById = async ({
   return result ?? null;
 };
 
-// export const deleteMembershipsByIds = async ({
+// export const delMembershipsByIds = async ({
 //   userIds,
 //   groupId,
 // }: {
@@ -91,7 +91,7 @@ export const deleteMembershipById = async ({
 //   return nullIfEmptyArrOrStr(result);
 // };
 
-export const deleteEmploymentsByIds = async ({
+export const delEmploymentsByIds = async ({
   userIds,
   groupId,
 }: {

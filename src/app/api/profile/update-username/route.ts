@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 
-import { selectUserById } from '@/db-access/select';
+import { selUserById } from '@/db-access/select';
 import { upUser } from '@/db-access/update';
 import { currentAuthUser } from '@/lib/nextauth';
 import { httpRes, serverResponseError, zodValidate } from '@/utils';
@@ -13,7 +13,7 @@ export const PATCH = async function PATCH(req: NextRequest) {
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({

@@ -1,9 +1,9 @@
 import { currentAuthUser } from '@/lib/nextauth';
 import { SelectUser } from '@/db/schema';
 import { qryGroupBySlug } from '@/db-access/query';
-import { selectUserById, selectUsersByIds } from '@/db-access/select';
+import { selUserById, selUsersByIds } from '@/db-access/select';
 import { txDelJoinReqsThenInsMemberships } from '@/db-access/transaction';
-import { updateJoinRequests } from '@/db-access/update';
+import { upJoinRequests } from '@/db-access/update';
 import { httpRes, serverResponseError, zodValidate } from '@/utils';
 import { EvaluateJoinRequestsSchema } from '@/zod-schemas';
 
@@ -16,7 +16,7 @@ export async function PATCH(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -56,7 +56,7 @@ export async function PATCH(
 
     const { userIds, confirmed } = validation.data;
 
-    const existingUsers = await selectUsersByIds(userIds);
+    const existingUsers = await selUsersByIds(userIds);
 
     if (!existingUsers) {
       return httpRes.badRequest({
@@ -81,7 +81,7 @@ export async function PATCH(
       // employee/owner rejects Join Requests (confirmed = false) | employee/owner can also remove the Join Request's evaluation (confirmed = null)
       membershipsCreationMsg = '';
 
-      result = await updateJoinRequests({
+      result = await upJoinRequests({
         userIds: existingUserIds,
         groupId,
         confirmed,
@@ -114,7 +114,7 @@ export async function GET(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({

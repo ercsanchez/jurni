@@ -22,7 +22,7 @@ import {
 } from '@/db/schema';
 import { getShiftedDateISOStringGivenTz, nullIfEmptyArrOrStr } from '@/utils';
 
-export const insertUser = async (newUser: InsertUser) => {
+export const insUser = async (newUser: InsertUser) => {
   const [result] = await db
     .insert(users)
     .values(newUser)
@@ -31,7 +31,7 @@ export const insertUser = async (newUser: InsertUser) => {
   return result ?? null;
 };
 
-export const insertAccount = async (newAccount: InsertAccount) => {
+export const insAccount = async (newAccount: InsertAccount) => {
   const [result] = await db.insert(accounts).values(newAccount).returning({
     userId: accounts.userId,
     providerAccountId: accounts.providerAccountId,
@@ -42,7 +42,7 @@ export const insertAccount = async (newAccount: InsertAccount) => {
   return result ?? null;
 };
 
-export const insertOrUpdateUserProfile = async (
+export const insOrUpdateUserProfile = async (
   newUserProfile: InsertUserProfile,
 ) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -1,7 +1,7 @@
 // EXAMPLE ROUTE
 import { httpRes } from '@/utils';
 import { serverResponseError } from '@/utils';
-import { queryFindUserByEmailWithAccts } from '@/db-access/query';
+import { qryFindUserByEmailWithAccts } from '@/db-access/query';
 
 export async function GET(
   _req: Request,
@@ -12,8 +12,8 @@ export async function GET(
 
     // const result = await selectUserByEmail(email);
 
-    const result = await queryFindUserByEmailWithAccts(email);
-    // console.log('queryFindUserByEmailWithAccts', JSON.stringify(result));
+    const result = await qryFindUserByEmailWithAccts(email);
+    // console.log('qryFindUserByEmailWithAccts', JSON.stringify(result));
 
     // add validation for email in query params here
 

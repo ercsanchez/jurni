@@ -1,8 +1,8 @@
 import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 import { insGroupSession } from '@/db-access/insert';
 import { qryGroupBySlug } from '@/db-access/query';
-import { selGroupBySlug, selectUserById } from '@/db-access/select';
-import { updateGroupSession } from '@/db-access/update';
+import { selGroupBySlug, selUserById } from '@/db-access/select';
+import { upGroupSession } from '@/db-access/update';
 import { currentAuthUser } from '@/lib/nextauth';
 import {
   httpRes,
@@ -25,7 +25,7 @@ export const POST = async function POST(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     // need to also check if auth user is an employee of this group
     if (!existingUser)
@@ -99,7 +99,7 @@ export const PATCH = async function PATCH(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -143,13 +143,13 @@ export const PATCH = async function PATCH(
     const { name: existingName, active: existingActive } = existingGroupSession;
 
     if (name === existingName && active === existingActive)
-      // updateGroupSession still returns the existing session even if no change in the fields
-      // lastEditedAt will be edited even if no actual update, so we need to check if there are actual changes before running updateGroupSession
+      // upGroupSession still returns the existing session even if no change in the fields
+      // lastEditedAt will be edited even if no actual update, so we need to check if there are actual changes before running upGroupSession
       return httpRes.badRequest({
         message: 'Data is the same to Database record.',
       });
 
-    const result = await updateGroupSession(validation.data);
+    const result = await upGroupSession(validation.data);
 
     if (!result)
       return httpResByStatus({
@@ -176,7 +176,7 @@ export const GET = async function GET(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({

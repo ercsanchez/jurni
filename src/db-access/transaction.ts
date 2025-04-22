@@ -17,7 +17,7 @@ import {
 import { nullIfEmptyArrOrStr } from '@/utils';
 import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
 
-export const insertUserAndAccountOnCredentialsRegister = async (
+export const txInsUserAndAccountOnCredentialsRegister = async (
   newUser: InsertUser,
 ) => {
   try {
@@ -63,7 +63,7 @@ export const insertUserAndAccountOnCredentialsRegister = async (
   }
 };
 
-export const updateUserPasswordAndInsertCredentialsAccount = async (
+export const txUpUserPasswordAndInsCredentialsAccount = async (
   userId: SelectUser['id'],
   hashedPword: SelectUser['password'],
 ) => {

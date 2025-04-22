@@ -2,8 +2,8 @@ import { currentAuthUser } from '@/lib/nextauth';
 import { qryFindGroupBySlugWithOwner } from '@/db-access/query';
 import {
   selGroupBySlug,
-  selectGroupByName,
-  selectUserById,
+  selGroupByName,
+  selUserById,
 } from '@/db-access/select';
 import { upGroup } from '@/db-access/update';
 import {
@@ -28,7 +28,7 @@ export const PATCH = async function PATCH(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -71,7 +71,7 @@ export const PATCH = async function PATCH(
 
     const { name } = validation.data;
 
-    const existingGroupWithDuplicateName = await selectGroupByName({ name });
+    const existingGroupWithDuplicateName = await selGroupByName({ name });
 
     if (existingGroupWithDuplicateName)
       return httpRes.conflict({ message: 'Group Name already exists.' });

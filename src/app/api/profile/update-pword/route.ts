@@ -3,11 +3,11 @@ import { NextRequest } from 'next/server';
 // import { DrizzleError } from 'drizzle-orm';
 
 import { currentAuthUser } from '@/lib/nextauth';
-import { updateUserPassword } from '@/db-access/update';
+import { upUserPassword } from '@/db-access/update';
 // import handler from '@/middleware/handler';
 // import authCheck from '@/middleware/authCheck';
-import { queryFindUserByEmailWithAcctWhereProvider } from '@/db-access/query';
-import { updateUserPasswordAndInsertCredentialsAccount } from '@/db-access/transaction';
+import { qryFindUserByEmailWithAcctWhereProvider } from '@/db-access/query';
+import { txUpUserPasswordAndInsCredentialsAccount } from '@/db-access/transaction';
 import {
   httpRes,
   zodValidate,
@@ -33,14 +33,14 @@ export const PATCH = async function PATCH(
   try {
     // check if user is authorized (requesting user is authenticated and exists in the database)
     const sessionUser = await currentAuthUser();
-    // const existingUser = await selectUserById(sessionUser?.id!);
+    // const existingUser = await selUserById(sessionUser?.id!);
 
     console.log('session user check', Boolean(sessionUser));
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
     const existingUserWithCredentialsAcct =
-      await queryFindUserByEmailWithAcctWhereProvider(
+      await qryFindUserByEmailWithAcctWhereProvider(
         sessionUser!.email!,
         'credentials',
       );
@@ -74,13 +74,13 @@ export const PATCH = async function PATCH(
       // account already exists, so no need to create account
 
       // we will update the password, regardless if forwarded pword is diff to the user's pword in the db
-      result = await updateUserPassword(
+      result = await upUserPassword(
         existingUserWithCredentialsAcct.id,
         hashedPassword,
       );
     } else {
       // account doesn't exist
-      result = await updateUserPasswordAndInsertCredentialsAccount(
+      result = await txUpUserPasswordAndInsCredentialsAccount(
         existingUserWithCredentialsAcct.id,
         hashedPassword,
       );

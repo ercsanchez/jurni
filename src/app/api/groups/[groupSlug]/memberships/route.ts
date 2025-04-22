@@ -1,7 +1,7 @@
 import { currentAuthUser } from '@/lib/nextauth';
 import { SelectUser } from '@/db/schema';
 import { qryGroupBySlug } from '@/db-access/query';
-import { selectUserById, selectUsersByIds } from '@/db-access/select';
+import { selUserById, selUsersByIds } from '@/db-access/select';
 import { txInsMembershipsAndDelJoinReqsIfExists } from '@/db-access/transaction';
 import { httpRes, serverResponseError, zodValidate } from '@/utils';
 import { UserIdsSchema } from '@/zod-schemas';
@@ -18,7 +18,7 @@ export const POST = async function POST(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     // need to also check if auth user is an employee of this group
     if (!existingUser)
@@ -63,7 +63,7 @@ export const POST = async function POST(
     // USING MULTIPLE FN CALLS --------------------------------------------
     // const existingUsers = await Promise.all(
     //   validation.data.userIds.map(async (userId: SelectUser['id']) => {
-    //     const existingUser = await selectUserById(userId);
+    //     const existingUser = await selUserById(userId);
     //     return existingUser?.id;
     //   }),
     // );
@@ -76,7 +76,7 @@ export const POST = async function POST(
     // -------------------------------------------------------------------
 
     // USING SQL OPERATOR ------------------------------------------------
-    const existingUsers = await selectUsersByIds(validation.data.userIds);
+    const existingUsers = await selUsersByIds(validation.data.userIds);
     // console.log('existingUsers using sql statement=====>', existingUsers);
 
     if (!existingUsers) {
@@ -121,7 +121,7 @@ export const GET = async function GET(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -159,7 +159,7 @@ export const GET = async function GET(
 //     if (!sessionUser)
 //       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-//     const existingUser = await selectUserById(sessionUser!.id!);
+//     const existingUser = await selUserById(sessionUser!.id!);
 
 //     // need to also check if auth user is an employee of this group
 //     if (!existingUser)

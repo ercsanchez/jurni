@@ -3,7 +3,7 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter';
 
 import { db } from '@/db';
 import { accounts, users } from '@/db/schema';
-import { selectUserById, selUserByName } from '@/db-access/select';
+import { selUserById, selUserByName } from '@/db-access/select';
 import { upUser } from '@/db-access/update';
 import authConfig from '@/lib/nextauth.config';
 import { createUniqSlugWithSelQryBySlug } from '@/utils';
@@ -73,7 +73,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (account?.provider === 'credentials') {
         // only execute the following if signing in thru credentials
-        // you can also use selectUserById(user.id!)
+        // you can also use selUserById(user.id!)
         // const existingUser = await selUserByEmail(user.email!);
         // if credentials provider and email not verified then refuse sign in
         // if (!existingUser?.emailVerified) return false;
@@ -107,7 +107,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return token;
       }
 
-      const existingUser = await selectUserById(token.sub);
+      const existingUser = await selUserById(token.sub);
 
       if (!existingUser) {
         // console.log('!existingUser', existingUser);
@@ -124,7 +124,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // token.role = existingUser.role;
 
       // no need to attach provider to token, at this time
-      // const existingAccount = await selectAccountByUserIdWhereProvider(
+      // const existingAccount = await selAccountByUserIdWhereProvider(
       //   existingUser.id,
       //   'credentials',
       // );

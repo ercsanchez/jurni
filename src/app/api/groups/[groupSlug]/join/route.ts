@@ -5,7 +5,7 @@ import { qryGroupBySlug } from '@/db-access/query';
 import {
   selGroupBySlug,
   selJoinRequest,
-  selectUserById,
+  selUserById,
 } from '@/db-access/select';
 import { httpRes, serverResponseError } from '@/utils';
 
@@ -19,7 +19,7 @@ export async function POST(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -79,7 +79,7 @@ export async function DELETE(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -143,7 +143,7 @@ export async function GET(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({

@@ -2,11 +2,7 @@ import { currentAuthUser } from '@/lib/nextauth';
 import { insEmployments } from '@/db-access/insert';
 import { SelectUser } from '@/db/schema';
 import { qryGroupBySlug } from '@/db-access/query';
-import {
-  selGroupBySlug,
-  selectUserById,
-  selectUsersByIds,
-} from '@/db-access/select';
+import { selGroupBySlug, selUserById, selUsersByIds } from '@/db-access/select';
 import { httpRes, serverResponseError, zodValidate } from '@/utils';
 import { UserIdsSchema } from '@/zod-schemas';
 
@@ -20,7 +16,7 @@ export const POST = async function POST(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     // need to also check if auth user is an employee of this group
     if (!existingUser)
@@ -53,7 +49,7 @@ export const POST = async function POST(
       return httpRes.badRequest({ message: validation?.message });
     }
 
-    const existingUsers = await selectUsersByIds(validation.data.userIds);
+    const existingUsers = await selUsersByIds(validation.data.userIds);
     // console.log('existingUsers using sql statement=====>', existingUsers);
 
     if (!existingUsers) {
@@ -97,7 +93,7 @@ export const GET = async function GET(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -149,7 +145,7 @@ export const GET = async function GET(
 //     if (!sessionUser)
 //       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-//     const existingUser = await selectUserById(sessionUser!.id!);
+//     const existingUser = await selUserById(sessionUser!.id!);
 
 //     // need to also check if auth user is an employee of this group
 //     if (!existingUser)
@@ -178,7 +174,7 @@ export const GET = async function GET(
 //       return httpRes.badRequest({ message: validation?.message });
 //     }
 
-//     const result = await deleteEmploymentsByIds({
+//     const result = await delEmploymentsByIds({
 //       userIds: validation.data.userIds,
 //       groupId,
 //     });

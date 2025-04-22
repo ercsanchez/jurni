@@ -6,7 +6,7 @@ import { insMemberCheckins } from '@/db-access/insert';
 import { qryGroupBySlug } from '@/db-access/query';
 import {
   selGroupBySlug,
-  selectUserById,
+  selUserById,
   selMemberCheckinsByGrpIdWherePeriodOrSessionIds,
   selMembershipsByUserIdsGroupId,
 } from '@/db-access/select';
@@ -35,7 +35,7 @@ export const POST = async function POST(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     // need to also check if auth user is an employee of this group
     if (!existingUser)
@@ -172,7 +172,7 @@ export const PATCH = async function PATCH(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -253,7 +253,7 @@ export const GET = async function GET(
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser!.id!);
+    const existingUser = await selUserById(sessionUser!.id!);
 
     if (!existingUser)
       return httpRes.notFound({

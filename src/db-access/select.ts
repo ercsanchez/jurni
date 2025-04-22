@@ -29,9 +29,9 @@ export const selUserByEmail = async (email: SelectUser['email']) => {
   return result ?? null;
 };
 
-export const selectUserById = async (id: SelectUser['id']) => {
+export const selUserById = async (id: SelectUser['id']) => {
   const [result] = await db.select().from(users).where(eq(users.id, id));
-  // console.log(`selectUserById: ${JSON.stringify(result[0])}`);
+  // console.log(`selUserById: ${JSON.stringify(result[0])}`);
 
   return result ?? null;
 };
@@ -50,7 +50,7 @@ export const selUserByName = async (name: SelectUser['name']) => {
   return result ?? null;
 };
 
-export const selectUsersByIds = async (userIds: Array<SelectUser['id']>) => {
+export const selUsersByIds = async (userIds: Array<SelectUser['id']>) => {
   try {
     // const query = db
     //   .select()
@@ -72,7 +72,7 @@ export const selectUsersByIds = async (userIds: Array<SelectUser['id']>) => {
   }
 };
 
-export const selectAccountByUserIdWhereProvider = async (
+export const selAccountByUserIdWhereProvider = async (
   userId: SelectAccount['userId'],
   provider: ExtendedAdapterAccountType,
 ) => {
@@ -85,13 +85,13 @@ export const selectAccountByUserIdWhereProvider = async (
   return result ?? null;
 };
 
-export const selectAllGroups = async () => {
+export const selAllGroups = async () => {
   const result = await db.select().from(groups);
   return nullIfEmptyArrOrStr(result) as Array<object> | null;
 };
 
 // should only return 1 group because name is unique
-export const selectGroupByName = async ({
+export const selGroupByName = async ({
   name,
 }: {
   name: SelectGroup['name'];

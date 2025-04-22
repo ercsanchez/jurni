@@ -27,7 +27,7 @@ interface WithOwner {
   };
 }
 
-export const queryFindUserByEmailWithAccts = async (
+export const qryFindUserByEmailWithAccts = async (
   email: SelectUser['email'],
 ) => {
   const result = await db.query.users.findFirst({
@@ -45,7 +45,7 @@ export const queryFindUserByEmailWithAccts = async (
 };
 
 // use query parameter to pass provider
-export const queryFindUserByEmailWithAcctWhereProvider = async (
+export const qryFindUserByEmailWithAcctWhereProvider = async (
   email: SelectUser['email'],
   provider: SelectAccount['provider'],
 ) => {
@@ -62,9 +62,7 @@ export const queryFindUserByEmailWithAcctWhereProvider = async (
   return result;
 };
 
-export const queryFindUserByIdWithOwnedGroups = async (
-  id: SelectUser['id'],
-) => {
+export const qryFindUserByIdWithOwnedGroups = async (id: SelectUser['id']) => {
   const result = await db.query.users.findFirst({
     where: eq(users.id, id),
     with: {
@@ -76,7 +74,7 @@ export const queryFindUserByIdWithOwnedGroups = async (
   return result;
 };
 
-export const queryFindGroupsByownedByWithOwner = async (
+export const qryFindGroupsByownedByWithOwner = async (
   ownedBy: SelectGroup['ownedBy'],
 ) => {
   const result = await db.query.groups.findMany({
@@ -91,7 +89,7 @@ export const queryFindGroupsByownedByWithOwner = async (
   return nullIfEmptyArrOrStr(result);
 };
 
-export const queryFindUserByIdWithProfile = async (id: SelectUser['id']) => {
+export const qryFindUserByIdWithProfile = async (id: SelectUser['id']) => {
   const result = await db.query.users.findFirst({
     where: eq(users.id, id),
     with: {
@@ -103,7 +101,7 @@ export const queryFindUserByIdWithProfile = async (id: SelectUser['id']) => {
   return result;
 };
 
-export const queryFindProfileByUserIdWithUser = async (
+export const qryFindProfileByUserIdWithUser = async (
   userId: SelectUserProfile['userId'],
 ) => {
   const result = await db.query.userProfiles.findFirst({
@@ -147,7 +145,7 @@ export const qryFindGroupBySlugWithOwner = async ({
   return result;
 };
 
-export const queryFindGroupsByownedBy = async (
+export const qryFindGroupsByownedBy = async (
   ownedBy: SelectGroup['ownedBy'],
 ) => {
   const result = await db.query.groups.findMany({
@@ -159,7 +157,7 @@ export const queryFindGroupsByownedBy = async (
   return nullIfEmptyArrOrStr(result);
 };
 
-export const queryFindGroupByIdWithMemberships = async (
+export const qryFindGroupByIdWithMemberships = async (
   groupId: SelectGroup['id'],
 ) => {
   const result = await db.query.groups.findFirst({
@@ -245,7 +243,7 @@ export const qryGroupBySlug = async ({
 };
 
 // redundant | use qryGroupBySlug
-// export const queryFindGroupByIdWithEmployments = async (
+// export const qryFindGroupByIdWithEmployments = async (
 //   groupId: SelectGroup['id'],
 // ) => {
 //   const result = await db.query.groups.findFirst({

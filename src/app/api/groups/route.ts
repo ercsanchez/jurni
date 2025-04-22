@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
 
 import { DEFAULT_TIMEZONE_OFFSET } from '@/config/constants';
-import { queryFindUserByIdWithOwnedGroups } from '@/db-access/query';
+import { qryFindUserByIdWithOwnedGroups } from '@/db-access/query';
 import {
-  selectAllGroups,
-  selectGroupByName,
+  selAllGroups,
+  selGroupByName,
   selGroupBySlug,
-  selectUserById,
+  selUserById,
 } from '@/db-access/select';
 import { txInsGroupThenInsOwnerAsEmployee } from '@/db-access/transaction';
 import { currentAuthUser } from '@/lib/nextauth';
@@ -39,7 +39,7 @@ export const GET = async function GET(req: NextRequest) {
     // console.log('hasSearchParams====>', hasSearchParams, req.nextUrl);
 
     if (!hasSearchParams) {
-      const userWithOwnedGroups = await queryFindUserByIdWithOwnedGroups(
+      const userWithOwnedGroups = await qryFindUserByIdWithOwnedGroups(
         sessionUser.id!,
       ); // TODO: should also query user's memberships
 
@@ -66,17 +66,17 @@ export const GET = async function GET(req: NextRequest) {
         nameSearchParamsSchema: {
           schema: NameSearchParamsSchema,
           noResultMsg: 'Group not found.',
-          fn: selectGroupByName as DbAccessFn,
+          fn: selGroupByName as DbAccessFn,
         },
         // search all groups (param: all=true)
         allSearchParamsSchema: {
           schema: AllSearchParamsSchema,
           noResultMsg: 'No existing groups yet.',
-          fn: selectAllGroups,
+          fn: selAllGroups,
 
-          // selectAllGroups doesn't receive any params so need to do it this way because fn will always be passed the searchParams obj as arg
+          // selAllGroups doesn't receive any params so need to do it this way because fn will always be passed the searchParams obj as arg
           // no need to specify args or check if all=true since zodValidate will take care of search params validation
-          // fn: (args: { all: true }) => args.all && selectAllGroups(),
+          // fn: (args: { all: true }) => args.all && selAllGroups(),
         },
       };
 
@@ -108,7 +108,7 @@ export const POST = async function POST(req: Request) {
     if (!sessionUser)
       return httpRes.unauthenticated({ message: 'User is not authenticated.' });
 
-    const existingUser = await selectUserById(sessionUser.id!);
+    const existingUser = await selUserById(sessionUser.id!);
 
     if (!existingUser)
       return httpRes.notFound({
@@ -126,7 +126,7 @@ export const POST = async function POST(req: Request) {
 
     // need to check if group name already exists so that we can inform user why req failed, unless, we restrict user (on the client-side) from sending a request if there is a name conflict (e.g. disable "create group" button until user chooses another name)
 
-    const existingGroup = await selectGroupByName({ name });
+    const existingGroup = await selGroupByName({ name });
 
     if (existingGroup)
       return httpRes.conflict({ message: 'Group Name already exists.' });
@@ -187,13 +187,13 @@ export const POST = async function POST(req: Request) {
 //   return httpRes.badRequest({ message: 'Invalid URL query.' });
 
 // if (groupNameIsValid) {
-//   const existingGroup = await selectGroupByName(groupName!);
+//   const existingGroup = await selGroupByName(groupName!);
 //   if (!existingGroup)
 //     return httpRes.notFound({ message: 'Group name does not exist.' });
 
 //   result = existingGroup;
 // } else if (includeAllGroupsIsValid) {
-//   const allGroups = await selectAllGroups();
+//   const allGroups = await selAllGroups();
 
 //   if (!allGroups)
 //     return httpRes.notFound({ message: 'No existing groups yet.' });
