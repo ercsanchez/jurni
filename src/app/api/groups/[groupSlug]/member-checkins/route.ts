@@ -112,7 +112,7 @@ export const POST = async function POST(
         groupId,
         createdBy: sessionUser.id!,
         confirmed: true,
-        confirmedBy: sessionUser.id!, // automatically confirmed if created by owner/employee
+        evaluatedBy: sessionUser.id!, // automatically confirmed if created by owner/employee
         timezoneOffset: tzOffset,
         // req body data
         userIds: existingMemberUserIds,
@@ -215,18 +215,18 @@ export const PATCH = async function PATCH(
     //     ? null
     //     : undefined;
 
-    const confirmationData = Object.is(confirmed, null)
-      ? { confirmed: null, confirmedBy: null }
+    const evaluationData = Object.is(confirmed, null)
+      ? { confirmed: null, evaluatedBy: null }
       : typeof confirmed === 'boolean'
         ? {
             confirmed,
-            confirmedBy: sessionUser.id,
+            evaluatedBy: sessionUser.id,
           }
         : {}; // confirmed is undefined
 
     const result = await upMemberCheckins({
       ids,
-      ...confirmationData,
+      ...evaluationData,
     });
 
     if (!result)

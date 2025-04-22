@@ -20,11 +20,7 @@ import {
   type InsertUser,
   type InsertUserProfile,
 } from '@/db/schema';
-import {
-  getShiftedDateISOStringGivenTz,
-  nullIfEmptyArrOrStr,
-  queryDataWithBigintToStr,
-} from '@/utils';
+import { getShiftedDateISOStringGivenTz, nullIfEmptyArrOrStr } from '@/utils';
 
 export const insertUser = async (newUser: InsertUser) => {
   const [result] = await db
@@ -192,7 +188,7 @@ export const insMemberCheckins = async ({
   sessionId,
   createdBy,
   confirmed,
-  confirmedBy,
+  evaluatedBy,
   timezoneOffset = DEFAULT_TIMEZONE_OFFSET,
   createdAt,
 }: {
@@ -201,7 +197,7 @@ export const insMemberCheckins = async ({
   sessionId: InsertMemberCheckin['sessionId'];
   createdBy: InsertMemberCheckin['createdBy'];
   confirmed?: InsertMemberCheckin['confirmed'];
-  confirmedBy?: InsertMemberCheckin['confirmedBy'];
+  evaluatedBy?: InsertMemberCheckin['evaluatedBy'];
   timezoneOffset?: InsertGroupSession['timezoneOffset'];
   createdAt?: string; // date iso string | don't use InsertMemberCheckin['createdAt'] since we expect a string
 }) => {
@@ -213,13 +209,15 @@ export const insMemberCheckins = async ({
       createdAtUTCDatetime,
     );
 
-    const confirmationData = Object.is(confirmed, null)
-      ? { confirmed: null, confirmedBy: null, confirmedAt: null }
+    console.log('createdAtLocalDateAdjusted4Tz', createdAtLocalDateAdjusted4Tz);
+
+    const evaluationData = Object.is(confirmed, null)
+      ? { confirmed: null, evaluatedBy: null, evaluatedAt: null }
       : typeof confirmed === 'boolean'
         ? {
             confirmed,
-            confirmedBy,
-            confirmedAt: new Date(),
+            evaluatedBy,
+            evaluatedAt: new Date(),
           }
         : {}; // confirmed is undefined
 
@@ -230,12 +228,12 @@ export const insMemberCheckins = async ({
       date: createdAtLocalDateAdjusted4Tz,
       createdAt: createdAtUTCDatetime,
       createdBy,
-      ...confirmationData,
+      ...evaluationData,
     }));
 
     // TypeError: value.toISOString is not a function | means that drizzle field mismatch to the input (e.g. field date type, with mode:'date' and you're passing a date ISO string instead of a date obj coz a string does not have a method of .toISOString
     // Fix: either pass a js date object to drizzle table field date with mode:'date' or pass a date ISO string to date with mode: 'string'
-    const queryResult = await db
+    const result = await db
       .insert(memberCheckins)
       .values(newMemberCheckins)
       .onConflictDoNothing({
@@ -246,7 +244,6 @@ export const insMemberCheckins = async ({
         ],
       })
       .returning();
-    const result = queryDataWithBigintToStr(queryResult, 'id');
 
     return nullIfEmptyArrOrStr(result);
   } catch (error) {

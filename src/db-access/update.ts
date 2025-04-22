@@ -13,7 +13,7 @@ import {
   type SelectMemberCheckin,
   type SelectUser,
 } from '@/db/schema';
-import { nullIfEmptyArrOrStr, queryDataWithBigintToStr } from '@/utils';
+import { nullIfEmptyArrOrStr } from '@/utils';
 
 // updates emailVerified and name
 export const upUser = async ({
@@ -122,22 +122,22 @@ export const updateGroupSession = async (data: {
 export const upMemberCheckins = async ({
   ids,
   confirmed,
-  confirmedBy,
+  evaluatedBy,
 }: {
   ids: Array<SelectMemberCheckin['id']>;
   confirmed?: SelectMemberCheckin['confirmed'];
-  confirmedBy?: SelectMemberCheckin['confirmedBy'];
+  evaluatedBy?: SelectMemberCheckin['evaluatedBy'];
   // groupId: SelectMemberCheckin['groupId'];
   // sessionId: SelectMemberCheckin['sessionId']; // doesnt seem to be needed since we already use the member checkin id
   // createdAt?: string;
 }) => {
-  const confirmationData = Object.is(confirmed, null)
-    ? { confirmed: null, confirmedBy: null, confirmedAt: null }
+  const evaluationData = Object.is(confirmed, null)
+    ? { confirmed: null, evaluatedBy: null, evaluatedAt: null }
     : typeof confirmed === 'boolean'
       ? {
           confirmed,
-          confirmedBy,
-          confirmedAt: new Date(),
+          evaluatedBy,
+          evaluatedAt: new Date(),
         }
       : {}; // confirmed is undefined
 
@@ -151,15 +151,15 @@ export const upMemberCheckins = async ({
   //   ? { createdAt: createdAtDateObj, createdDate: createdLocalDateISOString }
   //   : {};
 
-  const queryResult = await db
+  const result = await db
     .update(memberCheckins)
-    // .set({ ...confirmationData, ...creationData, ...rest })
-    .set({ ...confirmationData })
+    // .set({ ...evaluationData, ...creationData, ...rest })
+    .set({ ...evaluationData })
     .where(sql`${memberCheckins.id} IN ${ids}`)
     .returning();
 
-  // memberCheckin id is a bigint so needs to be converted to string
-  const result = queryDataWithBigintToStr(queryResult, 'id');
+  // if memberCheckin id is a bigint (with mode: 'bigint'), then needs to be converted to string | bigint (with mode: 'number') is handled like a js number data type and can be converted by JSON.stringify when returned as a response
+  // const result = queryDataWithBigintToStr(queryResult, 'id');
   // - or -
   // const result = q.map((i) => ({ ...i, id: i.id.toString() }));
 

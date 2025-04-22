@@ -11,4 +11,4 @@ export const DAY_NAMES = [
 export const DEFAULT_TIMEZONE_OFFSET = '+08:00';
 // export const DEFAULT_TIMEZONE_OFFSET = 'Z';
 
-export const EMPLOYEE_ROLES = ['owner', 'employee'] as const;
+export const EMPLOYEE_ROLES = ['owner', 'staff', 'admin'] as const;

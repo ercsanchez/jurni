@@ -19,7 +19,7 @@ import {
   nullIfEmptyObjOrStr,
   // padLeftWithOneZero,
   // padLeftWithTwoZeroes,
-  queryDataWithBigintToStr,
+  // queryDataWithBigintToStr,
   slugify,
 } from './general';
 import getEnvValue from './get-env-value';
@@ -57,7 +57,7 @@ export {
   nullIfEmptyObjOrStr,
   // padLeftWithOneZero,
   // padLeftWithTwoZeroes,
-  queryDataWithBigintToStr,
+  // queryDataWithBigintToStr,
   slugify,
 
   // get-env-value

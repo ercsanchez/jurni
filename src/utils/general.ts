@@ -69,34 +69,35 @@ export const padLeftWithTwoZeroes = (str: string) => {
         : str;
 };
 
+// no longer needed, since all drizzle fields that are bigint have mode:number, and will be interpreted as js numbers, which can be converted to string by JSON.stringify
 // converts query results array that contain bigint type values to string
-export const queryDataWithBigintToStr = (
-  data: Array<{ [key: string]: unknown }>,
-  keys?: string | Array<string>, // specify key that is a bigint for faster loop exec
-) => {
-  if (typeof keys === 'string') {
-    return data.map((i) => {
-      if (typeof i[keys] === 'bigint') i[keys] = i[keys].toString();
-      return i;
-    });
-  }
+// export const queryDataWithBigintToStr = (
+//   data: Array<{ [key: string]: unknown }>,
+//   keys?: string | Array<string>, // specify key that is a bigint for faster loop exec
+// ) => {
+//   if (typeof keys === 'string') {
+//     return data.map((i) => {
+//       if (typeof i[keys] === 'bigint') i[keys] = i[keys].toString();
+//       return i;
+//     });
+//   }
 
-  if (Array.isArray(keys)) {
-    return data.map((i) => {
-      keys.forEach((k) => {
-        if (k in i && typeof i[k] === 'bigint') i[k] = i[k].toString();
-      });
-      return i;
-    });
-  }
+//   if (Array.isArray(keys)) {
+//     return data.map((i) => {
+//       keys.forEach((k) => {
+//         if (k in i && typeof i[k] === 'bigint') i[k] = i[k].toString();
+//       });
+//       return i;
+//     });
+//   }
 
-  return data.map((i) => {
-    for (const k in i) {
-      if (typeof i[k] === 'bigint') i[k] = i[k].toString();
-    }
-    return i;
-  });
-};
+//   return data.map((i) => {
+//     for (const k in i) {
+//       if (typeof i[k] === 'bigint') i[k] = i[k].toString();
+//     }
+//     return i;
+//   });
+// };
 
 export const slugify = (str: string) => slug(str, { lowercase: true });
 
